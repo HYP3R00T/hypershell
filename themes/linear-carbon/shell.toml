@@ -1,0 +1,90 @@
+[bar]
+background = "#141416"
+text = "#ececf0"
+active = "#e48791"
+
+[hyprland]
+active-border = "#afa2f4"
+active-border-foreground = "#a6a6b0"
+
+[controls]
+normal-color = "#ececf0"
+normal-fill-alpha = 0.025
+normal-border = "#393941"
+normal-border-alpha = 1.0
+hover-cursor-color = "#ececf0"
+hover-cursor-fill-alpha = 0.05
+hover-cursor-border = "#393941"
+hover-cursor-border-alpha = 1.0
+focus-color = "#afa2f4"
+focus-fill-alpha = 0.10
+focus-border = "#afa2f4"
+focus-border-alpha = 0.85
+selected-color = "#afa2f4"
+selected-fill-alpha = 0.12
+selected-border-width = 0
+selection-color = "#afa2f4"
+selection-fill-alpha = 0.22
+
+[popups]
+background = "#202024"
+text = "#ececf0"
+border = "#393941"
+
+[tooltip]
+background = "#26262b"
+text = "#ececf0"
+border = "#393941"
+
+[notifications]
+background = "#202024"
+text = "#ececf0"
+border = "#393941"
+countdown = "#afa2f4"
+
+[launcher]
+background = "#1c1c20"
+background-alpha = 1.0
+text = "#ececf0"
+border = "#393941"
+scrim = "#09090a"
+selected-background = "#2a2833"
+selected-background-alpha = 1.0
+selected-text = "#afa2f4"
+selected-border = "#393941"
+selected-border-alpha = 1.0
+
+[menu]
+background = "#1c1c20"
+text = "#ececf0"
+border = "#393941"
+scrim = "#09090a"
+selected-background = "#2a2833"
+selected-background-alpha = 1.0
+selected-text = "#afa2f4"
+selected-border = "#393941"
+selected-border-alpha = 1.0
+
+[polkit]
+background = "#202024"
+text = "#ececf0"
+text-error = "#e48791"
+border = "#393941"
+border-error = "#e48791"
+scrim = "#09090a"
+accent = "#afa2f4"
+
+[lock]
+background = "#1c1c20"
+text = "#ececf0"
+placeholder = "#a6a6b0"
+text-error = "#e48791"
+border = "#393941"
+border-active = "#afa2f4"
+border-error = "#e48791"
+selection = "#afa2f4"
+
+[image-picker]
+text = "#ececf0"
+selected-border = "#afa2f4"
+unselected-border = "#a6a6b0"

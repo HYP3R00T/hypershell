@@ -1,8 +1,8 @@
 [project]
-site_name = "Project Template"
-site_description = "A reusable foundation for consistent development environments and maintainable project workflows."
-repo_name = "HYP3R00T/project-template"
-repo_url = "https://github.com/HYP3R00T/project-template"
+site_name = "Omarchy Extras"
+site_description = "Themes, wallpapers, and shell plugins for Omarchy."
+repo_name = "HYP3R00T/omarchy-extras"
+repo_url = "https://github.com/HYP3R00T/omarchy-extras"
 site_author = "HYP3R00T"
 copyright = "Copyright &copy; 2026 HYP3R00T"
 
@@ -100,7 +100,7 @@ toggle.icon = "lucide/moon"
 toggle.name = "Switch to light mode"
 
 [project.theme.icon]
-logo = "lucide/layout-template"
+logo = "lucide/palette"
 repo = "fontawesome/brands/github"
 next = "lucide/arrow-right"
 previous = "lucide/arrow-left"

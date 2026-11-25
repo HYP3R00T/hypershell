@@ -1,0 +1,36 @@
+mode = "dark"
+
+# Linear's near-black canvas with the Carbon Violet interaction palette.
+accent = "#afa2f4"
+selection = "#373155"
+selection_foreground = "#ececf0"
+muted = "#90909d"
+
+background = "#19191c"
+dark_background = "#101012"
+darker_background = "#09090a"
+lighter_background = "#26262b"
+
+foreground = "#ececf0"
+dark_foreground = "#858591"
+light_foreground = "#a6a6b0"
+bright_foreground = "#f4f4f7"
+
+red = "#e48791"
+yellow = "#dfbb80"
+orange = "#e3b77c"
+green = "#93c7a5"
+cyan = "#83c4cb"
+blue = "#97aef0"
+magenta = "#ba9de9"
+brown = "#b78e72"
+
+bright_red = "#f2a3ab"
+bright_yellow = "#f0ce95"
+bright_green = "#afd9ba"
+bright_cyan = "#a1dbe0"
+bright_blue = "#b2c2fc"
+bright_magenta = "#cfb6f6"
+
+hyprland_active_border = "#afa2f4"
+hyprland_inactive_border = "#393941"

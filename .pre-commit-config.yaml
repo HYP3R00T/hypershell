@@ -4,6 +4,12 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
+        exclude: &wallpaper_media '^(?:wallpapers/|themes/[^/]+/backgrounds/).+\.(?i:jpe?g|png|gif|bmp|webp|mp4|m4v|mov|webm|mkv|avi)$'
+      - id: check-added-large-files
+        alias: check-wallpaper-size
+        name: check wallpaper media size
+        files: *wallpaper_media
+        args: [--maxkb=5120]
       - id: check-case-conflict
       - id: check-executables-have-shebangs
       - id: check-illegal-windows-names

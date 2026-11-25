@@ -56,7 +56,7 @@ other wallpapers in that folder. Press **Super + Ctrl + W** to choose one.
 | --- | --- |
 | `themes/` | One folder per theme, including its matching wallpapers |
 | `plugins/` | One folder per Omarchy shell plugin |
-| `wallpapers/` | Standalone wallpapers |
+| `wallpapers/` | Standalone wallpapers and [artist credits](wallpapers/CREDITS.md) |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidance and
 [LICENSE](LICENSE) for licensing.

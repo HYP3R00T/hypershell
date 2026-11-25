@@ -20,3 +20,7 @@ UV_LINK_MODE = "copy"
 [tasks.docs]
 description = "Serve the documentation locally"
 run = "uvx zensical serve"
+
+[tasks.install-wallpapers]
+description = "Copy all repository wallpapers into the active Omarchy theme"
+run = "./scripts/install-wallpaper.sh"

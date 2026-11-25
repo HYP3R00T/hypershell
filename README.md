@@ -36,6 +36,20 @@ Edit the files in `themes/linear-carbon/` and run `omarchy theme set "Linear Car
 to preview your changes. Omarchy rebuilds its active theme when you run that
 command, including the generated application colors and wallpaper.
 
+## Install standalone wallpapers
+
+Put images or videos in `wallpapers/`, then run this from the repository root:
+
+```sh
+mise run install-wallpapers
+```
+
+You can also run `./scripts/install-wallpaper.sh` directly. Both commands copy
+all supported files into the active theme's personal Omarchy wallpaper folder.
+Files in subfolders appear together in the picker, so each filename must be
+unique. Running the command again updates matching files by name and keeps
+other wallpapers in that folder. Press **Super + Ctrl + W** to choose one.
+
 ## Repository layout
 
 | Directory | Contents |

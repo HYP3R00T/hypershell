@@ -4,12 +4,12 @@ A collection of themes, wallpapers, and shell plugins for Omarchy.
 
 ## Themes
 
-[**Linear Carbon**](themes/linear-carbon/) pairs near-black surfaces inspired by
-Linear with the violet accents and terminal colors of Herdr's Carbon Violet.
+[**Linear Carbon**](themes/linear-carbon/) pairs charcoal surfaces with a silver accent and
+muted syntax colors.
 It includes a matching wallpaper and colors for the shell, Hyprland, the
 terminal, and Chromium-family browsers.
 
-![Linear Carbon wallpaper preview](themes/linear-carbon/preview.png)
+![Linear Carbon desktop preview](themes/linear-carbon/linear-carbon.webp)
 
 ### Install Linear Carbon
 

@@ -8,14 +8,14 @@ Scope {
     property var colors: ({})
     property bool refreshPending: false
 
-    readonly property color frame: colors.darker_background ?? "#09090a"
-    readonly property color ink: colors.foreground ?? "#ececf0"
-    readonly property color muted: colors.light_foreground ?? "#a6a6b0"
-    readonly property color accent: colors.accent ?? "#afa2f4"
-    readonly property color tile: colors.dark_background ?? "#101012"
-    readonly property color hover: colors.background ?? "#19191c"
-    readonly property color track: colors.lighter_background ?? "#26262b"
-    readonly property color selectionTint: colors.selection ?? "#373155"
+    readonly property color frame: colors.darker_background ?? "#090909"
+    readonly property color ink: colors.foreground ?? "#ececec"
+    readonly property color muted: colors.light_foreground ?? "#adadad"
+    readonly property color accent: colors.accent ?? "#d6d6d6"
+    readonly property color tile: colors.dark_background ?? "#101010"
+    readonly property color hover: colors.background ?? "#191919"
+    readonly property color track: colors.lighter_background ?? "#262626"
+    readonly property color selectionTint: colors.selection ?? "#3d3d3d"
     readonly property color selection: Qt.tint(tile, Qt.rgba(selectionTint.r, selectionTint.g, selectionTint.b, 0.4))
 
     function refresh() {

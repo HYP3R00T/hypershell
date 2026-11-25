@@ -4,87 +4,87 @@ text = "#ececf0"
 active = "#e48791"
 
 [hyprland]
-active-border = "#636671"
-active-border-foreground = "#a6a6b0"
+active-border = "#666666"
+active-border-foreground = "#adadad"
 
 [controls]
-normal-color = "#ececf0"
+normal-color = "#ececec"
 normal-fill-alpha = 0.025
-normal-border = "#393941"
+normal-border = "#393939"
 normal-border-alpha = 1.0
-hover-cursor-color = "#ececf0"
+hover-cursor-color = "#ececec"
 hover-cursor-fill-alpha = 0.05
-hover-cursor-border = "#393941"
+hover-cursor-border = "#393939"
 hover-cursor-border-alpha = 1.0
-focus-color = "#afa2f4"
+focus-color = "#d6d6d6"
 focus-fill-alpha = 0.10
-focus-border = "#afa2f4"
+focus-border = "#d6d6d6"
 focus-border-alpha = 0.85
-selected-color = "#afa2f4"
+selected-color = "#d6d6d6"
 selected-fill-alpha = 0.12
 selected-border-width = 0
-selection-color = "#afa2f4"
+selection-color = "#d6d6d6"
 selection-fill-alpha = 0.22
 
 [popups]
-background = "#202024"
-text = "#ececf0"
-border = "#393941"
+background = "#202020"
+text = "#ececec"
+border = "#393939"
 
 [tooltip]
-background = "#26262b"
-text = "#ececf0"
-border = "#393941"
+background = "#262626"
+text = "#ececec"
+border = "#393939"
 
 [notifications]
-background = "#202024"
-text = "#ececf0"
-border = "#393941"
-countdown = "#afa2f4"
+background = "#202020"
+text = "#ececec"
+border = "#393939"
+countdown = "#d6d6d6"
 
 [launcher]
-background = "#1c1c20"
+background = "#1c1c1c"
 background-alpha = 1.0
-text = "#ececf0"
-border = "#393941"
-scrim = "#09090a"
-selected-background = "#2a2833"
+text = "#ececec"
+border = "#393939"
+scrim = "#090909"
+selected-background = "#2b2b2b"
 selected-background-alpha = 1.0
-selected-text = "#afa2f4"
-selected-border = "#393941"
+selected-text = "#d6d6d6"
+selected-border = "#393939"
 selected-border-alpha = 1.0
 
 [menu]
-background = "#1c1c20"
-text = "#ececf0"
-border = "#393941"
-scrim = "#09090a"
-selected-background = "#2a2833"
+background = "#1c1c1c"
+text = "#ececec"
+border = "#393939"
+scrim = "#090909"
+selected-background = "#2b2b2b"
 selected-background-alpha = 1.0
-selected-text = "#afa2f4"
-selected-border = "#393941"
+selected-text = "#d6d6d6"
+selected-border = "#393939"
 selected-border-alpha = 1.0
 
 [polkit]
-background = "#202024"
-text = "#ececf0"
-text-error = "#e48791"
-border = "#393941"
-border-error = "#e48791"
-scrim = "#09090a"
-accent = "#afa2f4"
+background = "#202020"
+text = "#ececec"
+text-error = "#db9191"
+border = "#393939"
+border-error = "#db9191"
+scrim = "#090909"
+accent = "#d6d6d6"
 
 [lock]
-background = "#1c1c20"
-text = "#ececf0"
-placeholder = "#a6a6b0"
-text-error = "#e48791"
-border = "#393941"
-border-active = "#afa2f4"
-border-error = "#e48791"
-selection = "#afa2f4"
+background = "#1c1c1c"
+text = "#ececec"
+placeholder = "#adadad"
+text-error = "#db9191"
+border = "#393939"
+border-active = "#d6d6d6"
+border-error = "#db9191"
+selection = "#d6d6d6"
 
 [image-picker]
-text = "#ececf0"
-selected-border = "#afa2f4"
-unselected-border = "#a6a6b0"
+text = "#ececec"
+selected-border = "#d6d6d6"
+unselected-border = "#adadad"

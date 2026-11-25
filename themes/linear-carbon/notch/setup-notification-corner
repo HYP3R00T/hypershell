@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source_dir="${OMARCHY_PATH:-/usr/share/omarchy}/shell/plugins/notifications"
+theme_notch=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+plugin_id="${USER:-$(id -un)}.notifications"
+clone="$HOME/.config/omarchy/plugins/$plugin_id"
+marker="$clone/.linear-carbon-notification-bridge"
+stage=$(mktemp -d)
+trap 'rm -rf -- "$stage"' EXIT
+
+fingerprint() (
+    cd -- "$1"
+    find . -type f ! -name .linear-carbon-notification-bridge -print0 |
+        sort -z | xargs -0 -r sha256sum
+)
+
+python3 "$theme_notch/notification-service-bridge.py" "$source_dir/Service.qml" > "$stage/Service.qml"
+
+if [[ -e "$clone" || -L "$clone" ]]; then
+    if [[ ! -f "$marker" ]] || ! fingerprint "$clone" | cmp -s - "$marker"; then
+        echo "The existing notification clone has local changes. Its files were preserved." >&2
+        exit 1
+    fi
+else
+    omarchy plugin clone omarchy.notifications
+fi
+
+# Use the current Omarchy notification files so the local adapter can be
+# refreshed after an Omarchy upgrade.
+cp -aL "$source_dir/." "$stage/notifications/"
+cp "$clone/manifest.json" "$stage/notifications/manifest.json"
+install -m 644 "$stage/Service.qml" "$stage/notifications/Service.qml"
+omarchy plugin validate "$stage/notifications"
+cp -a "$stage/notifications/." "$clone/"
+fingerprint "$clone" > "$marker"
+omarchy restart shell

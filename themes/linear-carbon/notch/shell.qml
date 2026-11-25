@@ -9,7 +9,7 @@ ShellRoot {
 
     readonly property color frameColor: palette.frame
     readonly property int bezel: 5
-    readonly property int screenRadius: 19
+    readonly property int frameRadius: 8
     property bool motionEnabled: false
     property bool themeActive: false
     readonly property ShellScreen targetScreen: Quickshell.screens[0] ?? null
@@ -28,6 +28,26 @@ ShellRoot {
     SystemClock {
         id: clock
         precision: SystemClock.Minutes
+    }
+
+    BottomPanel {
+        id: bottomPanel
+        targetScreen: shell.targetScreen
+        themeActive: shell.themeActive
+        motionEnabled: shell.motionEnabled
+        themePalette: palette
+        bezel: shell.bezel
+        curveRadius: shell.frameRadius
+    }
+
+    NotificationCorner {
+        targetScreen: shell.targetScreen
+        enabledForTheme: shell.themeActive
+        blockedByFullscreen: bottomPanel.underFullscreen
+        motionEnabled: shell.motionEnabled
+        themePalette: palette
+        bezel: shell.bezel
+        curveRadius: shell.frameRadius
     }
 
     Process {
@@ -74,7 +94,7 @@ ShellRoot {
             onPaint: {
                 const ctx = getContext("2d");
                 const edge = shell.bezel;
-                const innerRadius = shell.screenRadius - edge;
+                const innerRadius = shell.frameRadius;
                 ctx.reset();
                 ctx.clearRect(0, 0, width, height);
                 ctx.beginPath();
@@ -101,7 +121,7 @@ ShellRoot {
         WlrLayershell.keyboardFocus: activity.pinned ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         mask: Region {
             item: activity
-            bottomLeftRadius: Math.round(activity.bottomRadius)
+            bottomLeftRadius: activity.curveRadius
             bottomRightRadius: bottomLeftRadius
         }
 
@@ -191,6 +211,7 @@ ShellRoot {
             width: Math.min(implicitWidth, Math.max(0, parent.width - 48))
             height: implicitHeight
             themePalette: palette
+            curveRadius: shell.frameRadius
             motionEnabled: shell.motionEnabled
             workspaceEntries: panel.workspaceEntries
             timeLabel: Qt.formatTime(clock.date, "HH:mm")

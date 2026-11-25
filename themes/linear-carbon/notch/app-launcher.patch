@@ -1,0 +1,463 @@
+--- a/Dock.qml
++++ b/Dock.qml
+@@ -14,9 +14,12 @@
+   property var shell: null
+   property var manifest: null
+
+-  readonly property var appLibrary: shell ? shell.appLibrary : null
+-  readonly property var dockConfig: shell && shell.shellConfig && shell.shellConfig.dock ? shell.shellConfig.dock : ({})
+-  readonly property var defaultDockConfig: shell && shell.defaultsConfig && shell.defaultsConfig.dock ? shell.defaultsConfig.dock : ({})
++  // The clone's shell API is scoped. Reuse Omarchy's installed library and
++  // watch the same dock configuration files as the stock shell.
++  readonly property string installRoot: Quickshell.env("OMARCHY_PATH") || "/usr/share/omarchy"
++  readonly property var appLibrary: nativeLibrary.item
++  readonly property var dockConfig: userConfig.dock
++  readonly property var defaultDockConfig: defaultsConfig.dock
+   readonly property string position: DockModel.normalizePosition(dockConfig.position)
+   readonly property bool vertical: DockModel.isVertical(position)
+   readonly property bool autohide: dockConfig.autohide === true
+@@ -31,6 +34,36 @@
+   property var pendingPins: null
+   onDockConfigChanged: pendingPins = null
+
++  Loader {
++    id: nativeLibrary
++    source: Util.fileUrl(root.installRoot + "/shell/services/AppLibrary.qml")
++  }
++
++  component DockConfig: FileView {
++    property var dock: ({})
++    preload: true
++    watchChanges: true
++    printErrors: false
++    onFileChanged: reload()
++    onLoaded: {
++      try {
++        var config = JSON.parse(text())
++        dock = config && config.dock ? config.dock : ({})
++      } catch (_) {}
++    }
++    onLoadFailed: error => { if (error === FileViewError.FileNotFound) dock = ({}) }
++  }
++
++  DockConfig {
++    id: userConfig
++    path: Quickshell.env("HOME") + "/.config/omarchy/shell.json"
++  }
++
++  DockConfig {
++    id: defaultsConfig
++    path: root.installRoot + "/config/omarchy/shell.json"
++  }
++
+   // Entries that can claim a terminal app's window: those run in a terminal,
+   // and those that hand the terminal an app id of their own.
+   readonly property var terminalEntries: {
+--- a/AppGrid.qml
++++ b/AppGrid.qml
+@@ -1,6 +1,8 @@
+ import QtQuick
++import QtQuick.Controls.Basic as Controls
+ import Quickshell
+ import Quickshell.Wayland
++import Quickshell.Widgets
+ import qs.Commons
+ import qs.Commons as Commons
+ import qs.Ui
+@@ -29,30 +31,54 @@
+   property int selectedIndex: 0
+   property var apps: []
+
+-  readonly property int iconSize: Math.round(56 * Style.fontScale)
++  readonly property bool bottomSearch: Commons.Color.pick("launcher.dock-layout", "") === "bottom-search"
++  property bool showAll: false
++  readonly property bool resultsShown: !bottomSearch || filterText.trim().length > 0 || showAll
++  readonly property int frameRadius: 8
++  // Finish the curves at the visible dock edge, then overlap its fill.
++  readonly property int frameOverlap: 1
++  readonly property int bottomInset: Math.max(0,
++    Number(panel.targetMonitor?.lastIpcObject?.reserved?.[3] || 0) - frameRadius - frameOverlap)
++  readonly property int iconSize: Math.round((bottomSearch ? 28 : 56) * Style.fontScale)
+   readonly property int labelHeight: Math.ceil(labelMetrics.height) * 2
+   readonly property int cellGutter: Style.spacing.sm
+-  readonly property int cellPadding: Style.spacing.lg
+-  readonly property int cellWidth: Math.round(iconSize * 2.2)
+-  readonly property int cellHeight: cellPadding * 2 + iconSize + Style.spacing.md + labelHeight
++  readonly property int cellPadding: bottomSearch ? 7 : Style.spacing.lg
++  readonly property int cellWidth: bottomSearch
++    ? Math.max(1, Math.floor((cardWidth - inset * 2) / columns))
++    : Math.round(iconSize * 2.2)
++  readonly property int cellHeight: cellPadding * 2 + iconSize + labelGap + labelHeight
++  readonly property int labelGap: bottomSearch ? 5 : Style.spacing.md
+   readonly property int maxColumns: 7
+   readonly property int visibleRows: 4
+   readonly property int borderWidth: Math.max(1, Style.space(2))
+-  readonly property int contentMargin: Style.spacing.panelPadding
+-  readonly property int inset: contentMargin + borderWidth
+-  readonly property int headerHeight: Math.max(Style.space(36), Style.font.heading + Style.spacing.controlPaddingY * 2)
+-  readonly property int headerSpacing: Style.spacing.xl
+-  readonly property int screenMargin: Style.space(40)
++  readonly property int contentMargin: bottomSearch ? 8 : Style.spacing.panelPadding
++  readonly property int inset: contentMargin + (bottomSearch ? 0 : borderWidth)
++  readonly property int headerHeight: bottomSearch ? 40 : Math.max(Style.space(36), Style.font.heading + Style.spacing.controlPaddingY * 2)
++  readonly property int headerSpacing: bottomSearch ? 6 : Style.spacing.xl
++  readonly property int screenMargin: bottomSearch ? 12 : Style.space(40)
+
+   // The card fits whole columns, and the grid sits centered in it so any
+   // leftover width splits evenly on both sides.
+-  readonly property int cardWidth: Math.min(panel.width - screenMargin * 2, maxColumns * cellWidth + inset * 2)
+-  readonly property int columns: Math.max(1, Math.floor((cardWidth - inset * 2) / cellWidth))
++  readonly property int cardWidth: Math.max(0, Math.min(panel.width - screenMargin * 2,
++    bottomSearch ? (resultsShown ? 592 : 360) : maxColumns * cellWidth + inset * 2))
++  readonly property int columns: Math.max(1, bottomSearch
++    ? Math.min(5, Math.floor((cardWidth - inset * 2) / 91))
++    : Math.floor((cardWidth - inset * 2) / cellWidth))
+   readonly property int gridWidth: columns * cellWidth
+-  readonly property int cardHeight: Math.min(panel.height - screenMargin * 2, inset * 2 + headerHeight + headerSpacing + visibleRows * cellHeight)
++  readonly property int shownRows: bottomSearch
++    ? (resultsShown ? Math.min(visibleRows, Math.max(1, Math.ceil(apps.length / columns))) : 0)
++    : visibleRows
++  readonly property int cardHeight: Math.max(0, Math.min(panel.height - screenMargin * 2 - (bottomSearch ? bottomInset : 0),
++    inset * 2 + headerHeight + (shownRows ? headerSpacing + shownRows * cellHeight : 0)))
++
++  function focusSearch() {
++    if (root.bottomSearch) searchField.forceActiveFocus()
++    else keyCatcher.forceActiveFocus()
++  }
+
+   function open() {
+     root.selectedIndex = 0
++    root.showAll = false
+     if (root.appLibrary) root.appLibrary.refreshIcons()
+     // The cells from last time are reused when nothing changed, so the grid
+     // opens with its icons already drawn.
+@@ -63,7 +89,7 @@
+       grid.positionViewAtBeginning()
+     }
+     root.opened = true
+-    Qt.callLater(function() { keyCatcher.forceActiveFocus() })
++    Qt.callLater(root.focusSearch)
+   }
+
+   function close() {
+@@ -100,7 +126,7 @@
+
+   function cancelUninstall() {
+     root.uninstallEntry = null
+-    Qt.callLater(function() { keyCatcher.forceActiveFocus() })
++    Qt.callLater(root.focusSearch)
+   }
+
+   function confirmUninstall() {
+@@ -136,13 +162,15 @@
+
+   function select(delta) {
+     if (root.apps.length === 0) return
+-    root.selectedIndex = Math.max(0, Math.min(root.apps.length - 1, root.selectedIndex + delta))
++    var nextIndex = root.selectedIndex + delta
++    if (root.bottomSearch && (nextIndex < 0 || nextIndex >= root.apps.length)) return
++    root.selectedIndex = Math.max(0, Math.min(root.apps.length - 1, nextIndex))
+     grid.positionViewAtIndex(root.selectedIndex, GridView.Contain)
+   }
+
+   function launch(index) {
+     var entry = root.apps[index]
+-    if (!entry || !root.appLibrary) return
++    if (!root.resultsShown || !entry || !root.appLibrary) return
+     root.close()
+     if (root.dock) root.dock.launchEntry(entry)
+     else root.appLibrary.launch(entry.id, root.appLibrary.entryName(entry))
+@@ -173,7 +201,7 @@
+     Rectangle {
+       anchors.fill: parent
+       color: Commons.Color.menu.scrim
+-      opacity: root.dragging ? 0 : 1
++      opacity: root.bottomSearch || root.dragging ? 0 : 1
+
+       Behavior on opacity {
+         id: scrimFade
+@@ -190,16 +218,60 @@
+       }
+     }
+
++    Canvas {
++      anchors.horizontalCenter: card.horizontalCenter
++      anchors.bottom: card.bottom
++      width: card.width + 2 * root.frameRadius
++      height: root.frameRadius + root.frameOverlap
++      visible: root.bottomSearch && !root.dragging && card.width > 0
++      readonly property color paintColor: card.color
++      onWidthChanged: requestPaint()
++      onPaintColorChanged: requestPaint()
++      onPaint: {
++        const ctx = getContext("2d")
++        const r = root.frameRadius
++        ctx.reset()
++        ctx.clearRect(0, 0, width, height)
++        ctx.beginPath()
++        ctx.moveTo(0, r)
++        ctx.arcTo(r, r, r, 0, r)
++        ctx.lineTo(width - r, 0)
++        ctx.arcTo(width - r, r, width, r, r)
++        ctx.lineTo(width, height)
++        ctx.lineTo(0, height)
++        ctx.closePath()
++        ctx.fillStyle = paintColor
++        ctx.fill()
++      }
++    }
++
+     BorderSurface {
+       id: card
+       width: root.cardWidth
+       height: root.cardHeight
+-      anchors.centerIn: parent
+-      radius: Style.cornerRadius
++      anchors.horizontalCenter: parent.horizontalCenter
++      anchors.verticalCenter: root.bottomSearch ? undefined : parent.verticalCenter
++      anchors.bottom: root.bottomSearch ? parent.bottom : undefined
++      anchors.bottomMargin: root.bottomInset
++      radius: root.bottomSearch ? root.frameRadius : Style.cornerRadius
++      bottomLeftRadius: root.bottomSearch ? 0 : radius
++      bottomRightRadius: root.bottomSearch ? 0 : radius
+       color: Commons.Color.menu.background
+-      borderSpec: Border.surfaceSpec("menu", "border", Commons.Color.menu.border, root.borderWidth)
++      borderSpec: root.bottomSearch ? Border.none()
++        : Border.surfaceSpec("menu", "border", Commons.Color.menu.border, root.borderWidth)
+       padding: root.contentMargin
+       opacity: root.dragging ? 0 : 1
++      clip: root.bottomSearch
++
++      Behavior on width {
++        enabled: root.bottomSearch && panel.contentRevealed
++        NumberAnimation { duration: Style.duration(220); easing.type: Easing.OutCubic }
++      }
++
++      Behavior on height {
++        enabled: root.bottomSearch && panel.contentRevealed
++        NumberAnimation { duration: Style.duration(220); easing.type: Easing.OutCubic }
++      }
+
+       Behavior on opacity {
+         id: cardFade
+@@ -237,16 +309,18 @@
+         focus: true
+
+         Keys.priority: Keys.BeforeItem
+-        Keys.onPressed: function(event) {
++        Keys.onPressed: event => handleKey(event)
++        function handleKey(event) {
+           if (root.uninstallEntry) {
+             if (uninstallConfirm.handleKey(event)) event.accepted = true
+             return
+           }
+           if (event.key === Qt.Key_Delete) {
+-            root.requestUninstall(root.apps[root.selectedIndex])
++            if (root.resultsShown) root.requestUninstall(root.apps[root.selectedIndex])
+           } else if (event.key === Qt.Key_Escape) {
+             if (root.menuEntry) root.menuEntry = null
+             else if (root.filterText) root.setFilter("")
++            else if (root.bottomSearch && root.showAll) root.showAll = false
+             else root.close()
+           } else if (Util.editsFilter(event, root.filterText)) {
+             root.setFilter(Util.editedFilter(event, root.filterText))
+@@ -269,23 +343,25 @@
+         }
+       }
+
+-      Column {
+-        width: root.gridWidth
++      Item {
++        width: root.bottomSearch ? Math.max(0, card.width - card.contentLeftInset - card.contentRightInset) : root.gridWidth
+         anchors.horizontalCenter: parent.horizontalCenter
+         anchors.top: parent.top
+         anchors.bottom: parent.bottom
+         anchors.topMargin: card.contentTopInset
+         anchors.bottomMargin: card.contentBottomInset
+-        spacing: root.headerSpacing
+
+         Rectangle {
+-          x: root.cellGutter
+-          width: parent.width - root.cellGutter * 2
++          id: header
++          x: root.bottomSearch ? 0 : root.cellGutter
++          y: root.bottomSearch ? parent.height - height : 0
++          width: parent.width - (root.bottomSearch ? 0 : root.cellGutter * 2)
+           height: root.headerHeight
+-          radius: Style.cornerRadius
+-          color: Util.alpha(Commons.Color.menu.text, 0.06)
++          radius: root.bottomSearch ? 0 : Style.cornerRadius
++          color: root.bottomSearch ? "transparent" : Util.alpha(Commons.Color.menu.text, 0.06)
+
+           Text {
++            visible: !root.bottomSearch
+             anchors.left: parent.left
+             anchors.right: parent.right
+             anchors.leftMargin: Style.spacing.controlPaddingX
+@@ -299,11 +375,103 @@
+             font.pixelSize: Style.font.heading
+             elide: Text.ElideRight
+           }
++
++          Controls.TextField {
++            id: searchField
++            visible: root.bottomSearch
++            width: Math.max(0, parent.width - searchAction.width - 6)
++            height: parent.height
++            text: root.filterText
++            placeholderText: Commons.I18n.t("dock.searchApps")
++            Accessible.name: placeholderText
++            leftPadding: 34
++            rightPadding: 8
++            selectByMouse: true
++            font.pixelSize: Style.font.body
++            color: Commons.Color.menu.text
++            placeholderTextColor: Util.alpha(color, 0.62)
++            background: Rectangle { radius: 8; color: Util.alpha(Commons.Color.menu.text, 0.07) }
++            IconImage {
++              x: 10
++              anchors.verticalCenter: parent.verticalCenter
++              implicitSize: 16
++              source: Quickshell.iconPath("edit-find-symbolic", "edit-find")
++            }
++            onTextEdited: {
++              root.showAll = false
++              root.setFilter(text)
++            }
++            Keys.onPressed: function(event) {
++              var arrow = event.key === Qt.Key_Left || event.key === Qt.Key_Right
++                || event.key === Qt.Key_Up || event.key === Qt.Key_Down
++              if (root.uninstallEntry || event.key === Qt.Key_Escape || event.key === Qt.Key_Return || event.key === Qt.Key_Enter
++                  || (root.resultsShown && arrow && event.modifiers === Qt.NoModifier)
++                  || (root.showAll && event.key === Qt.Key_Delete))
++                keyCatcher.handleKey(event)
++            }
++          }
++
++          Controls.Button {
++            id: searchAction
++            visible: root.bottomSearch
++            anchors.right: parent.right
++            width: root.filterText.trim() ? 40 : 90
++            height: parent.height
++            text: root.filterText.trim() ? "×" : "All apps"
++            Accessible.name: root.filterText.trim() ? "Clear search" : text
++            padding: 0
++            hoverEnabled: true
++            background: Rectangle {
++              radius: 8
++              color: root.showAll ? Commons.Color.menu.text : Util.alpha(Commons.Color.menu.text, searchAction.hovered ? 0.12 : 0.07)
++            }
++            contentItem: Item {
++              Row {
++                anchors.centerIn: parent
++                spacing: 7
++
++                Grid {
++                  visible: !root.filterText.trim()
++                  anchors.verticalCenter: parent.verticalCenter
++                  columns: 2
++                  spacing: 1
++                  Repeater {
++                    model: 4
++                    Rectangle {
++                      width: 5
++                      height: 5
++                      radius: 1
++                      color: searchActionLabel.color
++                    }
++                  }
++                }
++
++                Text {
++                  id: searchActionLabel
++                  text: searchAction.text
++                  font.pixelSize: root.filterText.trim() ? 18 : Style.font.body
++                  color: root.showAll ? Commons.Color.menu.background : Commons.Color.menu.text
++                }
++              }
++            }
++            onClicked: {
++              if (root.filterText.trim()) root.setFilter("")
++              else {
++                root.showAll = !root.showAll
++                root.selectedIndex = 0
++                grid.positionViewAtBeginning()
++              }
++              root.focusSearch()
++            }
++          }
+         }
+
+         Item {
+-          width: parent.width
+-          height: parent.height - root.headerHeight - parent.spacing
++          visible: root.resultsShown
++          width: root.gridWidth
++          anchors.horizontalCenter: parent.horizontalCenter
++          y: root.bottomSearch ? 0 : root.headerHeight + root.headerSpacing
++          height: Math.max(0, parent.height - root.headerHeight - root.headerSpacing)
+
+           GridView {
+             id: grid
+@@ -343,25 +511,28 @@
+                 mipmap: true
+               }
+
+-              // The selection marks the app's name, not the whole cell.
+               Rectangle {
+-                anchors.centerIn: label
+-                width: Math.min(cell.width - root.cellGutter * 2, label.contentWidth + Style.spacing.md * 2)
+-                height: label.contentHeight + Style.spacing.xs * 2
+-                radius: Style.cornerRadius
++                anchors.horizontalCenter: parent.horizontalCenter
++                y: root.bottomSearch ? icon.y - 4 : label.y + (label.height - height) / 2
++                width: root.bottomSearch ? Math.min(cell.width - 4, Math.max(58, label.contentWidth + 14))
++                  : Math.min(cell.width - root.cellGutter * 2, label.contentWidth + Style.spacing.md * 2)
++                height: root.bottomSearch ? icon.height + root.labelGap + label.contentHeight + 8
++                  : label.contentHeight + Style.spacing.xs * 2
++                radius: root.bottomSearch ? 8 : Style.cornerRadius
+                 color: cell.selected ? Commons.Color.menu.selectedBackground : "transparent"
++                z: root.bottomSearch ? -1 : 0
+               }
+
+               Text {
+                 id: label
+                 anchors.top: icon.bottom
+-                anchors.topMargin: Style.spacing.md
++                anchors.topMargin: root.labelGap
+                 anchors.horizontalCenter: parent.horizontalCenter
+                 width: parent.width - (root.cellGutter + Style.spacing.md) * 2
+                 textFormat: Text.PlainText
+                 text: root.appLibrary ? root.appLibrary.entryName(cell.modelData) : ""
+-                color: cell.selected ? Commons.Color.menu.selectedText : Commons.Color.menu.text
+-                font.family: Style.font.menuFamily
++                color: !root.bottomSearch && cell.selected ? Commons.Color.menu.selectedText : Commons.Color.menu.text
++                font.family: root.bottomSearch ? "sans-serif" : Style.font.menuFamily
+                 font.pixelSize: Style.font.body
+                 horizontalAlignment: Text.AlignHCenter
+                 verticalAlignment: Text.AlignTop
+@@ -377,12 +548,13 @@
+                 acceptedButtons: Qt.LeftButton | Qt.RightButton
+                 // The grid would otherwise take a dragging press for a scroll.
+                 preventStealing: true
+-                onContainsMouseChanged: if (containsMouse && !root.dragging) root.selectedIndex = cell.index
++                onContainsMouseChanged: if (!root.bottomSearch && containsMouse && !root.dragging) root.selectedIndex = cell.index
+                 onPressed: function(event) {
+                   cell.moved = false
+                   cell.pressPoint = Qt.point(event.x, event.y)
+                 }
+                 onPositionChanged: function(event) {
++                  if (root.bottomSearch && containsMouse && !root.dragging && !pressedButtons) root.selectedIndex = cell.index
+                   if (!(pressedButtons & Qt.LeftButton)) return
+                   if (!cell.moved && Math.hypot(event.x - cell.pressPoint.x, event.y - cell.pressPoint.y) > Style.space(4)) cell.moved = true
+                   if (cell.moved) root.dragTo(cell.modelData, cell.mapToItem(panel.contentItem, event.x, event.y))
+@@ -446,7 +618,7 @@
+         ? Math.max(Style.gapsOut, root.menuPoint.x - width)
+         : Math.min(root.menuPoint.x, panel.width - width - Style.gapsOut)
+       y: Math.min(root.menuPoint.y, panel.height - height - Style.gapsOut)
+-      radius: Style.cornerRadius
++      radius: root.bottomSearch ? root.frameRadius : Style.cornerRadius
+       color: Commons.Color.popups.background
+       borderSpec: Border.surfaceSpec("popups", "border", Commons.Color.popups.border, Style.normalBorderWidth)
+       padding: Style.spacing.sm

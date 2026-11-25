@@ -43,6 +43,7 @@ border = "#393939"
 countdown = "#d6d6d6"
 
 [launcher]
+dock-layout = "bottom-search"
 background = "#1c1c1c"
 background-alpha = 1.0
 text = "#ececec"
@@ -55,15 +56,17 @@ selected-border = "#393939"
 selected-border-alpha = 1.0
 
 [menu]
-background = "#1c1c1c"
+background = "#090909"
 text = "#ececec"
 border = "#393939"
+border-width = 0
 scrim = "#090909"
-selected-background = "#2b2b2b"
+scrim-alpha = 0.20
+selected-background = "#242424"
 selected-background-alpha = 1.0
 selected-text = "#d6d6d6"
 selected-border = "#393939"
-selected-border-alpha = 1.0
+selected-border-alpha = 0
 
 [polkit]
 background = "#202020"

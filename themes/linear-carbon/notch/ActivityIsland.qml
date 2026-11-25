@@ -32,6 +32,7 @@ FocusScope {
     id: island
 
     required property bool motionEnabled
+    required property int curveRadius
     required property NotchPalette themePalette
     required property var workspaceEntries
     required property string timeLabel
@@ -52,17 +53,17 @@ FocusScope {
     readonly property real chargeLevel: Math.max(0, Math.min(1, battery?.percentage ?? 0))
 
     property real morph: expanded ? 1 : 0
-    readonly property real shoulder: 16 + 4 * morph
-    readonly property real bottomRadius: 14 + 4 * morph + 2 * controlsProgress
     readonly property int reservedWorkspaceMarks: 7
     readonly property int workspaceMarkPitch: 7
     readonly property int statusHeight: 10
+    readonly property int headerInset: 18
+    readonly property int clockClearance: 10
     property real workspaceExtraWidth: Math.max(0, workspaceEntries.length - reservedWorkspaceMarks) * 2 * workspaceMarkPitch
     property real controlsProgress: pinned ? 1 : 0
     readonly property int controlsTopInset: 7
     readonly property int controlsBottomInset: 12
     readonly property real maxControlHeight: Math.max(0, availableHeight - header.height - controlsTopInset - controlsBottomInset)
-    implicitWidth: 194 + workspaceExtraWidth + 36 * morph + 246 * controlsProgress
+    implicitWidth: 210 + workspaceExtraWidth + 20 * morph + 246 * controlsProgress
     implicitHeight: header.height + (1 - controlsProgress) * morph * (date.implicitHeight + 12)
         + controlsProgress * (Math.min(maxControlHeight, controls.implicitHeight) + controlsTopInset + controlsBottomInset)
 
@@ -148,17 +149,29 @@ FocusScope {
         color: island.frameColor
         topLeftRadius: 0
         topRightRadius: 0
-        bottomLeftRadius: island.bottomRadius
-        bottomRightRadius: island.bottomRadius
+        bottomLeftRadius: island.curveRadius
+        bottomRightRadius: island.curveRadius
     }
 
-    Shoulder { anchors.right: parent.left; anchors.rightMargin: -0.5 }
-    Shoulder { anchors.left: parent.right; anchors.leftMargin: -0.5; mirrored: true }
+    FrameShoulder {
+        width: island.curveRadius
+        anchors.right: parent.left
+        anchors.rightMargin: -0.5
+        paintColor: island.frameColor
+    }
+    FrameShoulder {
+        width: island.curveRadius
+        anchors.left: parent.right
+        anchors.leftMargin: -0.5
+        paintColor: island.frameColor
+        mirrored: true
+    }
 
     AbstractButton {
         id: header
         width: parent.width
-        height: 25
+        height: 30
+        padding: 0
         background: null
         Accessible.name: {
             const action = (island.pinned ? "Close top notch, " : "Open top notch, ") + island.timeLabel;
@@ -184,11 +197,12 @@ FocusScope {
             Row {
                 id: workspaceMarks
                 readonly property real pitch: Math.min(island.workspaceMarkPitch,
-                    Math.max(0.5, (notchClock.x - 17) / Math.max(1, island.workspaceEntries.length)))
+                    Math.max(0.5, (notchClock.x - island.headerInset - island.clockClearance)
+                        / Math.max(1, island.workspaceEntries.length)))
                 anchors.left: parent.left
-                anchors.leftMargin: 13
+                anchors.leftMargin: island.headerInset
                 anchors.verticalCenter: parent.verticalCenter
-                height: 10
+                height: island.statusHeight
                 spacing: Math.max(0, pitch - 3)
 
                 Repeater {
@@ -223,9 +237,9 @@ FocusScope {
             }
 
             Row {
-                x: Math.round(parent.width - width - 13)
+                x: Math.round(parent.width - width - island.headerInset)
                 y: Math.round((parent.height - height) / 2)
-                spacing: 8
+                spacing: 10
 
                 Item {
                     width: Math.ceil(island.statusHeight * 18 / 14)
@@ -358,28 +372,4 @@ FocusScope {
         }
     }
 
-    component Shoulder: Canvas {
-        property bool mirrored: false
-        readonly property color paintColor: island.frameColor
-        onPaintColorChanged: requestPaint()
-        width: Math.ceil(island.shoulder)
-        height: width
-        onWidthChanged: requestPaint()
-        onPaint: {
-            const ctx = getContext("2d");
-            ctx.reset();
-            ctx.clearRect(0, 0, width, height);
-            if (mirrored) {
-                ctx.translate(width, 0);
-                ctx.scale(-1, 1);
-            }
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.arcTo(width, 0, width, height, width);
-            ctx.lineTo(width, 0);
-            ctx.closePath();
-            ctx.fillStyle = paintColor;
-            ctx.fill();
-        }
-    }
 }

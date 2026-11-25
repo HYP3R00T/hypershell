@@ -39,6 +39,24 @@ omarchy theme set "Linear Carbon"
 Switching themes stops the notch. Selecting Linear Carbon again starts it,
 including when logging into an Omarchy session with Linear Carbon active.
 
+## Use the bottom-attached app launcher
+
+Run `notch/setup-app-launcher` once to install the dock clone. It updates
+Omarchy's app grid to open as a compact search box on Linear Carbon. Type
+to widen the launcher and show matches, or choose **All apps** to browse.
+The stock layout is used with other themes. The **Apps** entry points and
+existing Super keybindings continue to call Omarchy's launcher.
+
+Run the setup script again after an Omarchy update to refresh the clone.
+
+## Use the notification corner for arrivals
+
+Run `notch/setup-notification-corner` once from this directory. It creates a
+local clone of Omarchy's notification plugin so the Linear Carbon corner can
+show new arrivals and the history in the same place. The clone uses Omarchy's
+regular presentation on other themes. Run the setup script again after an
+Omarchy update to refresh the clone.
+
 ## License
 
 [MIT](LICENSE)

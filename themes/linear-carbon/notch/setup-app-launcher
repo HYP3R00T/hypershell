@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source_dir="${OMARCHY_PATH:-/usr/share/omarchy}/shell/plugins/dock"
+theme_notch=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+plugin_id="${USER:-$(id -un)}.dock"
+clone="$HOME/.config/omarchy/plugins/$plugin_id"
+marker="$clone/.linear-carbon-launcher"
+stage=$(mktemp -d)
+trap 'rm -rf -- "$stage"' EXIT
+
+fingerprint() (
+  cd -- "$1"
+  find . -type f ! -name .linear-carbon-launcher -print0 |
+    sort -z | xargs -0 -r sha256sum
+)
+
+cp -aL "$source_dir" "$stage/dock"
+patch --batch --forward --fuzz=0 -d "$stage/dock" -p1 <"$theme_notch/app-launcher.patch"
+
+if [[ -e "$clone" || -L "$clone" ]]; then
+  if [[ ! -f "$marker" ]] || ! fingerprint "$clone" | cmp -s - "$marker"; then
+    echo "The existing dock clone has local changes. Its files were preserved." >&2
+    exit 1
+  fi
+else
+  omarchy plugin clone omarchy.dock
+fi
+
+cp "$clone/manifest.json" "$stage/dock/manifest.json"
+omarchy plugin validate "$stage/dock"
+cp -a "$stage/dock/." "$clone/"
+fingerprint "$clone" > "$marker"
+omarchy restart shell

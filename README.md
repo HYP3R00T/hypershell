@@ -36,6 +36,24 @@ Edit the files in `themes/linear-carbon/` and run `omarchy theme set "Linear Car
 to preview your changes. Omarchy rebuilds its active theme when you run that
 command, including the generated application colors and wallpaper.
 
+### Enable the Linear Carbon notch
+
+The optional notch is a separate Quickshell panel. It reads the Linear Carbon
+palette from `colors.toml` and provides workspace indicators, a clock, and
+quick controls. It runs alongside the standard Omarchy bar.
+
+With Linear Carbon installed, enable its notch on an Omarchy desktop with
+Quickshell and Python 3.11 or newer. Run once from the repository root:
+
+```sh
+omarchy hook install theme-set themes/linear-carbon/notch/linear-carbon-notch
+omarchy hook install post-boot themes/linear-carbon/notch/linear-carbon-notch
+omarchy theme set "Linear Carbon"
+```
+
+Selecting Linear Carbon starts the notch. Switching themes stops it, and
+logging into Omarchy restores it when Linear Carbon is the active theme.
+
 ## Install standalone wallpapers
 
 Put images or videos in `wallpapers/`, then run this from the repository root:

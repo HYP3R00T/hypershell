@@ -53,7 +53,7 @@ FocusScope {
 
     property real morph: expanded ? 1 : 0
     readonly property real shoulder: 16 + 4 * morph
-    readonly property real bottomRadius: 14 + 4 * morph
+    readonly property real bottomRadius: 14 + 4 * morph + 2 * controlsProgress
     readonly property int reservedWorkspaceMarks: 7
     readonly property int workspaceMarkPitch: 7
     readonly property int statusHeight: 10
@@ -304,8 +304,8 @@ FocusScope {
             id: controls
             themePalette: island.themePalette
             anchors.fill: parent
-            anchors.leftMargin: 12
-            anchors.rightMargin: 12
+            anchors.leftMargin: 15
+            anchors.rightMargin: 15
             anchors.topMargin: island.controlsTopInset
             anchors.bottomMargin: island.controlsBottomInset
             active: island.pinned

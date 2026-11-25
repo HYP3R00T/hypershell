@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls.Basic as Controls
+import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
@@ -23,6 +24,8 @@ Item {
     readonly property color selection: themePalette.selection
     readonly property color hoverFill: themePalette.hover
     readonly property int actionWidth: Math.max(76, textSize * 5 + 18)
+    readonly property int pageTopInset: 18
+    readonly property int pageBottomInset: 14
     property string selected: "agents"
     property int textSize: 12
     property string notice: ""
@@ -48,13 +51,13 @@ Item {
     readonly property string configPath: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/omarchy/shell.json"
 
     readonly property var sections: [
-        { key: "agents", label: "Agents", icon: "󰚩", view: agentsPage },
-        { key: "audio", label: "Audio", icon: "󰕾", view: audioPage },
-        { key: "display", label: "Display", icon: "󰍹", view: displayPage },
-        { key: "power", label: "Power", icon: "󰁹", view: powerPage },
-        { key: "ethernet", label: "Ethernet", icon: "󰈀", view: ethernetPage },
-        { key: "weather", label: "Weather", icon: "󰖐", view: weatherPage },
-        { key: "calendar", label: "Calendar", icon: "󰃭", view: calendarPage }
+        { key: "agents", label: "Agents", icon: "bot", view: agentsPage },
+        { key: "audio", label: "Audio", icon: "audio-lines", view: audioPage },
+        { key: "display", label: "Display", icon: "monitor", view: displayPage },
+        { key: "power", label: "Power", icon: "battery-medium", view: powerPage },
+        { key: "ethernet", label: "Ethernet", icon: "ethernet-port", view: ethernetPage },
+        { key: "weather", label: "Weather", icon: "cloud-sun", view: weatherPage },
+        { key: "calendar", label: "Calendar", icon: "calendar-days", view: calendarPage }
     ]
     readonly property var nodes: active && selected === "audio" ? Pipewire.nodes.values : []
     readonly property var sink: active && selected === "audio" ? Pipewire.defaultAudioSink : null
@@ -73,7 +76,8 @@ Item {
     PwObjectTracker { objects: [...hub.outputs, ...hub.inputs, ...hub.streams] }
 
     clip: true
-    implicitHeight: Math.min(410, Math.max(272, (page.item?.implicitHeight ?? 0) + 24))
+    implicitHeight: Math.min(410, Math.max(sidebar.implicitHeight + 18,
+        content.implicitHeight + pageTopInset + pageBottomInset))
 
     function pluginSettings(id) {
         return Object.values(shellSettings.bar?.layout ?? {}).flat().find(entry => entry?.id === id)?.settings
@@ -348,9 +352,10 @@ Item {
         width: 56
         height: parent.height
         Column {
+            id: sidebar
             anchors.horizontalCenter: parent.horizontalCenter
-            y: 8
-            spacing: 2
+            y: 10
+            spacing: 3
             Repeater {
                 model: hub.sections
                 delegate: Controls.Button {
@@ -358,7 +363,7 @@ Item {
                     required property var modelData
                     objectName: "notch-" + modelData.key
                     width: 40
-                    height: 35
+                    height: 36
                     leftPadding: 0
                     rightPadding: 0
                     topPadding: 0
@@ -375,16 +380,18 @@ Item {
                         color: parent.chosen ? hub.selection : parent.visualFocus || parent.hovered ? hub.hoverFill : "transparent"
                     }
                     contentItem: Item {
-                        Text {
-                            id: glyph
-                            readonly property rect inkBounds: glyphMetrics.tightBoundingRect(text)
-                            text: tab.modelData.icon
-                            font.family: "JetBrainsMono Nerd Font"
-                            font.pixelSize: 17
-                            x: Math.round((parent.width - inkBounds.width) / 2 - inkBounds.x)
-                            y: Math.round((parent.height - inkBounds.height) / 2 - baselineOffset - inkBounds.y)
-                            color: tab.chosen ? hub.accent : hub.muted
-                            FontMetrics { id: glyphMetrics; font: glyph.font }
+                        Image {
+                            anchors.centerIn: parent
+                            anchors.alignWhenCentered: true
+                            width: 17
+                            height: width
+                            source: Qt.resolvedUrl("icons/" + tab.modelData.icon + ".svg")
+                            layer.enabled: true
+                            layer.effect: MultiEffect {
+                                autoPaddingEnabled: false
+                                colorization: 1
+                                colorizationColor: tab.chosen ? hub.accent : hub.muted
+                            }
                         }
                     }
                 }
@@ -396,9 +403,9 @@ Item {
         id: viewport
         anchors.fill: parent
         anchors.leftMargin: 56
-        anchors.topMargin: 12
-        anchors.rightMargin: 12
-        anchors.bottomMargin: 12
+        anchors.topMargin: hub.pageTopInset
+        anchors.rightMargin: 14
+        anchors.bottomMargin: hub.pageBottomInset
         clip: true
         contentWidth: width
         contentHeight: content.implicitHeight
@@ -406,8 +413,8 @@ Item {
         Controls.ScrollBar.vertical: Controls.ScrollBar { policy: Controls.ScrollBar.AsNeeded }
         ColumnLayout {
             id: content
-            x: 12
-            width: Math.max(0, viewport.width - 14)
+            x: 16
+            width: Math.max(0, viewport.width - x - 2)
             spacing: 9
             Loader {
                 id: page
@@ -464,6 +471,7 @@ Item {
         property string label
         property string value: "—"
         property bool heading: false
+        readonly property bool compact: parent instanceof GridLayout
         Layout.fillWidth: true
         spacing: 5
         Copy {
@@ -472,9 +480,22 @@ Item {
             font.pixelSize: hub.textSize + (parent.heading ? 1 : 0)
             font.weight: parent.heading ? Font.Medium : Font.Normal
             Layout.fillWidth: true
-            Layout.preferredWidth: 120
+            Layout.preferredWidth: parent.compact ? implicitWidth : 120
         }
-        Copy { text: parent.value || "—"; Layout.fillWidth: true; Layout.preferredWidth: 120; horizontalAlignment: Text.AlignRight }
+        Copy {
+            text: parent.value || "—"
+            Layout.fillWidth: true
+            Layout.preferredWidth: parent.compact ? implicitWidth : 120
+            horizontalAlignment: Text.AlignRight
+        }
+    }
+
+    component Metrics: GridLayout {
+        Layout.fillWidth: true
+        columns: width >= hub.textSize * 28 ? 2 : 1
+        uniformCellWidths: true
+        columnSpacing: 13
+        rowSpacing: 6
     }
 
     component Range: GridLayout {
@@ -738,11 +759,37 @@ Item {
             RowLayout {
                 Layout.fillWidth: true
                 Copy { text: "Night Light"; font.pixelSize: hub.textSize + 1; font.weight: Font.Medium; Layout.fillWidth: true }
-                Action {
-                    text: hub.nightLight ? "On" : "Off"
-                    Accessible.name: "Night Light, " + text
-                    selected: hub.nightLight
+                Controls.Button {
+                    id: nightSwitch
+                    Accessible.name: "Night Light"
+                    Accessible.role: Accessible.CheckBox
+                    Accessible.checkable: true
+                    Accessible.checked: hub.nightLight
+                    implicitWidth: 38
+                    implicitHeight: 30
+                    padding: 0
+                    hoverEnabled: true
                     enabled: !actionProc.running
+                    background: null
+                    contentItem: Item {
+                        Rectangle {
+                            width: 38
+                            height: 20
+                            anchors.centerIn: parent
+                            radius: height / 2
+                            color: hub.nightLight ? hub.selection : nightSwitch.hovered ? hub.hoverFill : hub.tile
+                            border.width: nightSwitch.visualFocus ? 1 : 0
+                            border.color: hub.accent
+                            Rectangle {
+                                height: 14
+                                width: height
+                                radius: height / 2
+                                anchors.verticalCenter: parent.verticalCenter
+                                x: hub.nightLight ? parent.width - width - 3 : 3
+                                color: hub.nightLight ? hub.accent : hub.muted
+                            }
+                        }
+                    }
                     onClicked: hub.run(["omarchy-toggle-nightlight"])
                 }
             }
@@ -757,14 +804,18 @@ Item {
                 }
             }
             Copy { text: "Scale · focused display"; color: hub.detail }
-            EqualActions {
-                spacing: 4
+            GridLayout {
+                Layout.fillWidth: true
+                columns: width >= hub.textSize * 20 ? 6 : 3
+                uniformCellWidths: true
+                columnSpacing: 4
+                rowSpacing: 4
                 Repeater {
                     model: ["1", "1.25", "1.6", "2", "3", "4"]
                     delegate: Action {
                         required property string modelData
                         Layout.fillWidth: true
-                        Layout.minimumWidth: 0
+                        minimumButtonWidth: 0
                         leftPadding: 3
                         rightPadding: 3
                         text: modelData + "×"
@@ -831,24 +882,26 @@ Item {
                     }
                 }
             }
-            Field {
+            Metrics {
                 Layout.topMargin: 10
-                label: "Power state"
-                value: hub.powerInfo.state ? hub.powerInfo.state[0].toUpperCase() + hub.powerInfo.state.slice(1) : "—"
+                Field {
+                    label: "Power state"
+                    value: hub.powerInfo.state ? hub.powerInfo.state[0].toUpperCase() + hub.powerInfo.state.slice(1) : "—"
+                }
+                Field { visible: !!hub.powerInfo.threshold; label: "Charge limit"; value: hub.powerInfo.threshold || "" }
+                Field {
+                    visible: !hub.powerInfo.threshold && !!hub.powerInfo.time
+                    label: hub.powerInfo.state === "charging" ? "Time to full" : "Time remaining"
+                    value: hub.powerInfo.time || "—"
+                }
+                Field {
+                    visible: !hub.powerInfo.threshold && !!hub.powerInfo.rate
+                    label: "Battery rate"
+                    value: hub.powerInfo.rate || "—"
+                }
+                Field { label: "Battery size"; value: hub.powerInfo.size || "—" }
+                Field { label: "Charge cycles"; value: hub.powerInfo.cycles || "—" }
             }
-            Field { visible: !!hub.powerInfo.threshold; label: "Charge limit"; value: hub.powerInfo.threshold || "" }
-            Field {
-                visible: !hub.powerInfo.threshold && !!hub.powerInfo.time
-                label: hub.powerInfo.state === "charging" ? "Time to full" : "Time remaining"
-                value: hub.powerInfo.time || "—"
-            }
-            Field {
-                visible: !hub.powerInfo.threshold && !!hub.powerInfo.rate
-                label: "Battery rate"
-                value: hub.powerInfo.rate || "—"
-            }
-            Field { label: "Battery size"; value: hub.powerInfo.size || "—" }
-            Field { label: "Charge cycles"; value: hub.powerInfo.cycles || "—" }
         }
     }
 
@@ -871,14 +924,16 @@ Item {
                     }
                 }
             }
-            Field { label: "Ping"; value: NetModel.formatPingLatency(hub.connection.internetPingLatency, !!hub.connection.internetPingSamples?.length, null, hub.number) }
-            Field { label: "Packet loss"; value: NetModel.formatPacketLoss(hub.connection.internetPingPacketLoss, !!hub.connection.internetPingSamples?.length, hub.number) }
-            Field { label: "Receiving"; value: hub.ethernet.iface ? NetModel.formatRate(hub.traffic.downloadRate, hub.number) : "—" }
-            Field { label: "Sending"; value: hub.ethernet.iface ? NetModel.formatRate(hub.traffic.uploadRate, hub.number) : "—" }
-            Field { label: "Downloaded"; value: hub.ethernet.iface ? NetModel.formatBytes(hub.ethernet.rx_bytes, hub.number) : "—" }
-            Field { label: "Uploaded"; value: hub.ethernet.iface ? NetModel.formatBytes(hub.ethernet.tx_bytes, hub.number) : "—" }
-            Field { label: "IP address"; value: hub.ethernet.ip || "—" }
-            Field { label: "Gateway"; value: hub.ethernet.gateway || "—" }
+            Metrics {
+                Field { label: "Ping"; value: NetModel.formatPingLatency(hub.connection.internetPingLatency, !!hub.connection.internetPingSamples?.length, null, hub.number) }
+                Field { label: "Packet loss"; value: NetModel.formatPacketLoss(hub.connection.internetPingPacketLoss, !!hub.connection.internetPingSamples?.length, hub.number) }
+                Field { label: "Receiving"; value: hub.ethernet.iface ? NetModel.formatRate(hub.traffic.downloadRate, hub.number) : "—" }
+                Field { label: "Sending"; value: hub.ethernet.iface ? NetModel.formatRate(hub.traffic.uploadRate, hub.number) : "—" }
+                Field { label: "Downloaded"; value: hub.ethernet.iface ? NetModel.formatBytes(hub.ethernet.rx_bytes, hub.number) : "—" }
+                Field { label: "Uploaded"; value: hub.ethernet.iface ? NetModel.formatBytes(hub.ethernet.tx_bytes, hub.number) : "—" }
+                Field { label: "IP address"; value: hub.ethernet.ip || "—" }
+                Field { label: "Gateway"; value: hub.ethernet.gateway || "—" }
+            }
             Copy { Layout.topMargin: 4; text: "DNS provider"; font.pixelSize: hub.textSize + 1; font.weight: Font.Medium }
             EqualActions {
                 Repeater {
@@ -915,13 +970,23 @@ Item {
                 return minutes >= 1440 ? Math.floor(minutes / 1440) + "d " + Math.floor(minutes % 1440 / 60) + "h"
                     : minutes >= 60 ? Math.floor(minutes / 60) + "h " + minutes % 60 + "m" : minutes + "m";
             }
-            Copy {
+            RowLayout {
                 Layout.fillWidth: true
-                text: (hub.agentTokens >= 1e9 ? hub.number(hub.agentTokens / 1e9, 1) + "B"
-                    : hub.agentTokens >= 1e6 ? hub.number(hub.agentTokens / 1e6, 1) + "M"
-                    : hub.agentTokens >= 1e3 ? hub.number(hub.agentTokens / 1e3, 1) + "K"
-                    : hub.number(hub.agentTokens)) + " tokens today"
-                font.bold: true
+                spacing: 4
+                Copy {
+                    text: hub.agentTokens >= 1e9 ? hub.number(hub.agentTokens / 1e9, 1) + "B"
+                        : hub.agentTokens >= 1e6 ? hub.number(hub.agentTokens / 1e6, 1) + "M"
+                        : hub.agentTokens >= 1e3 ? hub.number(hub.agentTokens / 1e3, 1) + "K"
+                        : hub.number(hub.agentTokens)
+                    font.pixelSize: hub.textSize + 3
+                    font.weight: Font.DemiBold
+                    Layout.alignment: Qt.AlignBaseline
+                }
+                Copy {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignBaseline
+                    text: "tokens today"
+                }
             }
             Copy { visible: !hub.agents.length; text: "No usage records available"; color: hub.muted }
             Repeater {
@@ -929,8 +994,8 @@ Item {
                 delegate: Group {
                     id: provider
                     required property var modelData
-                    Layout.topMargin: 10
-                    spacing: 5
+                    Layout.topMargin: 12
+                    spacing: 6
                     RowLayout {
                         Layout.fillWidth: true
                         Copy {
@@ -951,10 +1016,9 @@ Item {
                         delegate: RowLayout {
                             required property var modelData
                             Layout.fillWidth: true
-                            Layout.leftMargin: 8
                             Copy {
                                 text: modelData.title || modelData.label || ""
-                                Layout.preferredWidth: 103
+                                Layout.preferredWidth: Math.max(48, implicitWidth)
                                 font.pixelSize: agentsPageView.detailSize
                                 color: hub.muted
                             }
@@ -970,14 +1034,13 @@ Item {
                                 Layout.preferredWidth: 50
                                 horizontalAlignment: Text.AlignRight
                                 font.pixelSize: agentsPageView.detailSize
-                                color: hub.muted
+                                color: hub.ink
                             }
                         }
                     }
                     Copy {
                         visible: provider.modelData.resetCredits?.available !== undefined
                         Layout.fillWidth: true
-                        Layout.leftMargin: 8
                         font.pixelSize: agentsPageView.detailSize
                         text: (provider.modelData.resetCredits?.available ?? 0) + " free resets" +
                             (agentsPageView.resetLabel(provider.modelData.resetCredits?.nextExpiresAt) ?
@@ -1007,9 +1070,11 @@ Item {
                 text: hub.weather.temperature + "°C  ·  " + hub.weather.condition
                 font.pixelSize: hub.textSize + 5
             }
-            Field { visible: !!hub.weather.name; label: "Feels like"; value: hub.weather.feels + "°C" }
-            Field { visible: !!hub.weather.name; label: "Wind"; value: hub.weather.wind + " km/h" }
-            Field { visible: !!hub.weather.name; label: "Humidity"; value: hub.weather.humidity + "%" }
+            Metrics {
+                Field { visible: !!hub.weather.name; label: "Feels like"; value: hub.weather.feels + "°C" }
+                Field { visible: !!hub.weather.name; label: "Wind"; value: hub.weather.wind + " km/h" }
+                Field { visible: !!hub.weather.name; label: "Humidity"; value: hub.weather.humidity + "%" }
+            }
             Repeater {
                 model: hub.weather.forecast ?? []
                 delegate: Field {

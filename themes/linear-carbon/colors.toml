@@ -32,5 +32,5 @@ bright_cyan = "#a1dbe0"
 bright_blue = "#b2c2fc"
 bright_magenta = "#cfb6f6"
 
-hyprland_active_border = "#afa2f4"
+hyprland_active_border = "#636671"
 hyprland_inactive_border = "#393941"

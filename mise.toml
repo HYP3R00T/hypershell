@@ -11,11 +11,10 @@ lockfile = true
 use_git_credentials = true
 
 [hooks]
-enter = { run = "bash ./scripts/enter_project.sh", run_windows = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./scripts/enter_project.ps1" }
+enter = { run = "bash ./scripts/enter_project.sh" }
 
 [env]
-_.file = ".env"  # for sensitive data
-UV_LINK_MODE = "copy"
+_.file = ".env" # for sensitive data
 
 [tasks.docs]
 description = "Serve the documentation locally"

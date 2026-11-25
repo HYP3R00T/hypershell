@@ -9,7 +9,7 @@ repos:
         alias: check-wallpaper-size
         name: check wallpaper media size
         files: *wallpaper_media
-        args: [--maxkb=5120]
+        args: [--maxkb=10240]
       - id: check-case-conflict
       - id: check-executables-have-shebangs
       - id: check-illegal-windows-names

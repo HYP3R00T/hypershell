@@ -49,6 +49,14 @@ existing Super keybindings continue to call Omarchy's launcher.
 
 Run the setup script again after an Omarchy update to refresh the clone.
 
+## Use the bottom-attached Omarchy menu
+
+Run `notch/setup-omarchy-menu` once from this directory. The Linear Carbon
+layout puts the stock menu sections beside their commands and keeps the
+native wallpaper selector. Other themes and script-driven selectors use
+Omarchy's default layout. Run the setup script again after an Omarchy
+update to refresh the clone.
+
 ## Use the notification corner for arrivals
 
 Run `notch/setup-notification-corner` once from this directory. It creates a

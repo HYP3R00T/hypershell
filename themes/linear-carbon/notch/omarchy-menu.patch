@@ -1,0 +1,413 @@
+--- a/Menu.qml
++++ b/Menu.qml
+@@ -3,4 +3,6 @@
+ import Quickshell.Wayland
+ import QtQuick
++import QtQuick.Controls.Basic as Controls
++import Quickshell.Widgets
+ import qs.Commons
+ import qs.Commons as Commons
+@@ -74,4 +76,13 @@
+   property string mode: "menu"
+   readonly property bool dmenuActive: mode === "select" || mode === "input"
++  readonly property bool bottomMenu: !dmenuActive && Commons.Color.pick("menu.layout", "") === "bottom-sidebar"
++  readonly property int frameRadius: 8
++  readonly property int sidebarWidth: Style.space(140)
++  readonly property int sidebarRowHeight: Math.max(34, Style.font.body + 14)
++  readonly property var sidebarRows: bottomMenu ? itemOrder.map(id => item(id)).filter(entry =>
++    entry && entry.parent === "root" && isVisible(entry)) : []
++  readonly property string sidebarSelection: activeMenu.split(".")[0]
++  readonly property string menuHeading: filterText.trim() ? Commons.I18n.t("common.search").replace(/[.…]+$/, "")
++    : (item(activeMenu)?.title || item(activeMenu)?.label || "")
+   property string dmenuPrompt: ""
+   property var dmenuOptions: []
+@@ -123,10 +134,13 @@
+   readonly property real rowReservedBorderLeft: Border.left(selectedBorderSpec)
+   readonly property real rowReservedBorderRight: Border.right(selectedBorderSpec)
+-  readonly property int cornerRadius: Style.cornerRadius
+-  property int contentMargin: Style.spacing.panelPadding
+-  property int headerHeight: Math.max(Style.space(34), Style.font.title + Style.spacing.controlPaddingY * 2)
++  readonly property int cornerRadius: bottomMenu ? frameRadius : Style.cornerRadius
++  property int contentMargin: bottomMenu ? 10 : Style.spacing.panelPadding
++  property int headerHeight: bottomMenu ? Math.max(42, Style.font.body + 18)
++    : Math.max(Style.space(34), Style.font.title + Style.spacing.controlPaddingY * 2)
+   property int contentSpacing: Style.spacing.md
+-  property int baseRowHeight: Math.max(Style.space(50), Style.font.body + Style.spacing.rowPaddingX * 2)
+-  property int detailRowHeight: Math.max(Style.space(58), Style.font.body + Style.font.caption + Style.spacing.rowPaddingX * 2)
++  property int baseRowHeight: bottomMenu ? Math.max(38, Style.font.body + 16)
++    : Math.max(Style.space(50), Style.font.body + Style.spacing.rowPaddingX * 2)
++  property int detailRowHeight: bottomMenu ? Math.max(44, Style.font.body + Style.font.caption + 12)
++    : Math.max(Style.space(58), Style.font.body + Style.font.caption + Style.spacing.rowPaddingX * 2)
+   // How much of the first hidden row stays visible at the fold — enough to
+   // read as a cut-off row rather than a bottom border.
+@@ -136,7 +150,10 @@
+   property bool searchDivider: false
+   property int layoutSerial: 0
+-  property int cardWidth: Math.min(root.dmenuActive ? Style.space(root.dmenuWidth) : ((root.activeMenu === "trigger.capture.screenrecord" || root.activeMenu === "appearance.font" || root.activeMenu === "update.kernel") ? Style.space(520) : Style.space(300)), panel.width - Style.gapsOut * 2)
++  property int cardWidth: Math.min(bottomMenu ? Style.space(560) : root.dmenuActive ? Style.space(root.dmenuWidth) : ((root.activeMenu === "trigger.capture.screenrecord" || root.activeMenu === "appearance.font" || root.activeMenu === "update.kernel") ? Style.space(520) : Style.space(300)), panel.width - Style.gapsOut * 2)
+   property int visibleRowsHeight: root.dmenuActive ? dmenuRowListHeight(layoutSerial, displayModel.count, filterText) : rowListHeight(layoutSerial, displayModel.count, filterText, searchDivider)
+-  property int cardHeight: root.dmenuActive
++  property int cardHeight: bottomMenu
++    ? Math.min(contentMargin * 2 + headerHeight + contentSpacing
++      + Math.max(sidebarRows.length * (sidebarRowHeight + 2), menuTitle.height + baseRowHeight * 8), panel.height - panel.bottomInset - Style.gapsOut)
++    : root.dmenuActive
+     ? Math.min(contentMargin * 2 + headerHeight + (mode === "input" ? 0 : contentSpacing + visibleRowsHeight), panel.height - Style.gapsOut * 2)
+     : Math.min(contentMargin * 2 + headerHeight + contentSpacing + visibleRowsHeight, panel.height - Style.gapsOut * 2)
+@@ -516,5 +533,5 @@
+
+   function loadProvidersForSearch() {
+-    var active = root.item(root.activeMenu) ? root.activeMenu : "root"
++    var active = !root.bottomMenu && root.item(root.activeMenu) ? root.activeMenu : "root"
+
+     for (var i = 0; i < root.itemOrder.length; i++) {
+@@ -594,4 +611,8 @@
+
+   function searchScore(entry, query) {
++    // An exact command alias beats incidental matches in app descriptions.
++    if (root.bottomMenu && entry.kind !== "app" &&
++        entry.aliases.some(alias => typeof alias === "string" && alias.toLowerCase() === query.toLowerCase().trim()))
++      return -1000 + entry.order
+     return MenuModel.searchScore(root.items, entry, query)
+   }
+@@ -721,4 +742,5 @@
+
+     if (query) {
++      var searchRoot = root.bottomMenu ? "root" : active
+       var currentRows = []
+       var drilldownRows = []
+@@ -727,10 +749,10 @@
+         var entry = root.item(root.itemOrder[i])
+         if (!entry || entry.id === "root") continue
+-        if (!root.isDescendantOf(entry.id, active)) continue
++        if (!root.isDescendantOf(entry.id, searchRoot)) continue
+         if (!root.matchesQuery(entry, query)) continue
+
+         var detail = root.parentPathFor(entry.id)
+         var row = root.displayRow(entry, detail, root.searchScore(entry, query))
+-        if (entry.parent === active) currentRows.push(row)
++        if (entry.parent === searchRoot) currentRows.push(row)
+         else drilldownRows.push(row)
+       }
+@@ -887,6 +909,9 @@
+
+     if (!root.rowSelectable(index)) return
++    root.activateMenuRow(displayModel.get(index), fromPointer)
++  }
+
+-    var row = displayModel.get(index)
++  function activateMenuRow(row, fromPointer) {
++    if (root.deleteConfirmOpen || row.disabled) return
+     if (row.kind === "menu" || row.kind === "link") {
+       root.setActiveMenu(row.target || row.itemId, true, fromPointer)
+@@ -957,5 +982,6 @@
+     selectionFile = ""
+     doneFile = ""
+-    activeMenu = root.item(initialMenu) ? initialMenu : "root"
++    activeMenu = root.bottomMenu && initialMenu === "root" && root.item("appearance") ? "appearance"
++      : root.item(initialMenu) ? initialMenu : "root"
+     navStack = []
+     filterText = ""
+@@ -1284,8 +1310,11 @@
+     property int cardTop: -1
+     property int maxRowsHeight: -1
++    readonly property int bottomInset: Math.max(0,
++      Number(targetMonitor?.lastIpcObject?.reserved?.[3] || 0) - root.frameRadius - 1)
+     readonly property int centeredTop: Math.max(Style.gapsOut, Math.round((height - root.cardHeight) / 2))
+-    readonly property int effectiveCardTop: cardTop >= 0 ? cardTop : centeredTop
++    readonly property int effectiveCardTop: root.bottomMenu ? height - bottomInset - root.cardHeight
++      : cardTop >= 0 ? cardTop : centeredTop
+     function freezeCardTop() {
+-      if (shown && cardTop < 0) {
++      if (!root.bottomMenu && shown && cardTop < 0) {
+         cardTop = effectiveCardTop
+         maxRowsHeight = root.visibleRowsHeight
+@@ -1297,5 +1326,5 @@
+     Rectangle {
+       anchors.fill: parent
+-      color: root.scrim
++      color: root.bottomMenu ? "transparent" : root.scrim
+     }
+
+@@ -1305,13 +1334,42 @@
+     }
+
++    Canvas {
++      visible: root.bottomMenu && card.width > 0
++      anchors.horizontalCenter: card.horizontalCenter
++      anchors.bottom: card.bottom
++      width: card.width + 2 * root.frameRadius
++      height: root.frameRadius + 1
++      readonly property color paintColor: card.color
++      onWidthChanged: requestPaint()
++      onPaintColorChanged: requestPaint()
++      onPaint: {
++        const ctx = getContext("2d")
++        const radius = root.frameRadius
++        ctx.reset()
++        ctx.clearRect(0, 0, width, height)
++        ctx.beginPath()
++        ctx.moveTo(0, radius)
++        ctx.arcTo(radius, radius, radius, 0, radius)
++        ctx.lineTo(width - radius, 0)
++        ctx.arcTo(width - radius, radius, width, radius, radius)
++        ctx.lineTo(width, height)
++        ctx.lineTo(0, height)
++        ctx.closePath()
++        ctx.fillStyle = paintColor
++        ctx.fill()
++      }
++    }
++
+     BorderSurface {
+       id: card
+       width: root.cardWidth
+-      height: Math.min(root.cardHeight, panel.height - Style.gapsOut - panel.effectiveCardTop)
++      height: root.bottomMenu ? root.cardHeight : Math.min(root.cardHeight, panel.height - Style.gapsOut - panel.effectiveCardTop)
+       radius: root.cornerRadius
++      bottomLeftRadius: root.bottomMenu ? 0 : radius
++      bottomRightRadius: root.bottomMenu ? 0 : radius
+       anchors.horizontalCenter: parent.horizontalCenter
+       y: panel.effectiveCardTop
+       color: root.background
+-      borderSpec: root.borderSpec
++      borderSpec: root.bottomMenu ? Border.none() : root.borderSpec
+       padding: root.contentMargin
+
+@@ -1337,4 +1395,5 @@
+           } else if (event.key === Qt.Key_Escape) {
+             if (root.filterText) root.setFilter("")
++            else if (root.bottomMenu && root.navStack.length > 0) root.goBack()
+             else root.cancel()
+             event.accepted = true
+@@ -1399,5 +1458,13 @@
+           height: root.headerHeight
+           radius: root.cornerRadius
+-          color: "transparent"
++          color: root.bottomMenu ? Util.alpha(root.foreground, 0.07) : "transparent"
++
++          IconImage {
++            visible: root.bottomMenu
++            x: 11
++            anchors.verticalCenter: parent.verticalCenter
++            implicitSize: 16
++            source: Quickshell.iconPath("edit-find-symbolic", "edit-find")
++          }
+
+           FilterInput {
+@@ -1405,4 +1472,6 @@
+             anchors.left: parent.left
+             anchors.right: parent.right
++            anchors.leftMargin: root.bottomMenu ? 35 : 0
++            anchors.rightMargin: root.bottomMenu ? (clearSearch.visible ? 36 : 10) : 0
+             anchors.verticalCenter: parent.verticalCenter
+             keyHandler: keyCatcher
+@@ -1410,6 +1479,6 @@
+             readOnly: root.deleteConfirmOpen
+             color: root.foreground
+-            font.family: root.fontFamily
+-            font.pixelSize: Style.font.heading
++            font.family: root.bottomMenu ? "sans-serif" : root.fontFamily
++            font.pixelSize: root.bottomMenu ? Style.font.body : Style.font.heading
+             onTextChanged: if (text !== root.filterText) root.setFilter(text)
+           }
+@@ -1420,21 +1489,147 @@
+             verticalAlignment: Text.AlignVCenter
+             visible: !root.filterText && !filterInput.preeditText
+-            text: root.dmenuActive ? (root.dmenuPrompt + "…") : ((root.item(root.activeMenu) ? (root.item(root.activeMenu).title || root.item(root.activeMenu).label) : "Go") + "…")
++            text: root.bottomMenu ? Commons.I18n.t("common.search")
++              : root.dmenuActive ? (root.dmenuPrompt + "…") : ((root.item(root.activeMenu) ? (root.item(root.activeMenu).title || root.item(root.activeMenu).label) : "Go") + "…")
+             color: root.foreground
+             opacity: 0.58
+-            font.family: root.fontFamily
+-            font.pixelSize: Style.font.heading
++            font.family: filterInput.font.family
++            font.pixelSize: filterInput.font.pixelSize
+             elide: Text.ElideRight
+           }
+
++          Controls.Button {
++            id: clearSearch
++            visible: root.bottomMenu && root.filterText.length > 0
++            width: 28
++            height: 28
++            anchors { right: parent.right; verticalCenter: parent.verticalCenter }
++            anchors.rightMargin: 5
++            Accessible.name: "Clear search"
++            text: "×"
++            background: Rectangle {
++              radius: 6
++              color: clearSearch.hovered || clearSearch.visualFocus ? root.selectedBackground : "transparent"
++            }
++            contentItem: Text {
++              text: clearSearch.text
++              color: root.foreground
++              horizontalAlignment: Text.AlignHCenter
++              verticalAlignment: Text.AlignVCenter
++            }
++            onClicked: {
++              root.setFilter("")
++              filterInput.forceActiveFocus()
++            }
++          }
++
+         }
+
+         Item {
+           width: parent.width
+-          height: root.visibleRowsHeight
++          height: root.bottomMenu ? Math.max(0, parent.height - root.headerHeight - root.contentSpacing) : root.visibleRowsHeight
++
++          ListView {
++            id: sidebar
++            visible: root.bottomMenu
++            anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
++            width: visible ? Math.min(root.sidebarWidth, parent.width * 0.4) : 0
++            model: root.sidebarRows
++            spacing: 2
++            clip: true
++            boundsBehavior: Flickable.StopAtBounds
++
++            delegate: Controls.Button {
++              id: sidebarButton
++              required property var modelData
++              readonly property bool selected: !root.filterText && root.sidebarSelection === modelData.id
++              width: sidebar.width
++              height: root.sidebarRowHeight
++              enabled: !root.isDisabled(modelData)
++              hoverEnabled: true
++              text: root.labelFor(modelData)
++              contentItem: Row {
++                spacing: 7
++                Text {
++                  width: 20
++                  anchors.verticalCenter: parent.verticalCenter
++                  horizontalAlignment: Text.AlignHCenter
++                  text: sidebarButton.modelData.icon || ""
++                  textFormat: Text.PlainText
++                  color: root.foreground
++                  opacity: 0.74
++                  font.family: sidebarButton.modelData.iconFont || root.fontFamily
++                  font.pixelSize: Style.font.body
++                }
++                Text {
++                  width: Math.max(0, parent.width - 27)
++                  anchors.verticalCenter: parent.verticalCenter
++                  text: sidebarButton.text
++                  textFormat: Text.PlainText
++                  elide: Text.ElideRight
++                  color: root.foreground
++                  opacity: sidebarButton.selected ? 1 : 0.8
++                  font.family: "sans-serif"
++                  font.pixelSize: Style.font.body
++                }
++              }
++              background: Rectangle {
++                radius: 7
++                color: sidebarButton.hovered || sidebarButton.visualFocus ? root.selectedBackground
++                  : sidebarButton.selected ? Util.alpha(root.foreground, 0.08) : "transparent"
++              }
++              onClicked: {
++                root.activateMenuRow(root.displayRow(modelData, "", modelData.order), true)
++                if (root.opened) filterInput.forceActiveFocus()
++              }
++            }
++          }
++
++          Text {
++            id: menuTitle
++            visible: root.bottomMenu
++            anchors { left: sidebar.right; right: parent.right; top: parent.top }
++            anchors.leftMargin: backButton.visible ? 44 : 18
++            height: 34
++            verticalAlignment: Text.AlignVCenter
++            text: root.menuHeading
++            textFormat: Text.PlainText
++            elide: Text.ElideRight
++            color: root.foreground
++            font.family: "sans-serif"
++            font.pixelSize: Style.font.heading
++            font.weight: Font.DemiBold
++          }
++
++          Controls.Button {
++            id: backButton
++            visible: root.bottomMenu && (root.filterText.length > 0 || root.navStack.length > 0)
++            width: 27
++            height: 27
++            anchors { left: sidebar.right; verticalCenter: menuTitle.verticalCenter }
++            anchors.leftMargin: 13
++            Accessible.name: "Back"
++            text: Commons.I18n.rightToLeft ? "→" : "←"
++            background: Rectangle {
++              radius: 6
++              color: backButton.hovered || backButton.visualFocus ? root.selectedBackground : "transparent"
++            }
++            contentItem: Text {
++              text: backButton.text
++              color: root.foreground
++              horizontalAlignment: Text.AlignHCenter
++              verticalAlignment: Text.AlignVCenter
++            }
++            onClicked: {
++              if (root.filterText) root.setFilter("")
++              else root.goBack()
++              filterInput.forceActiveFocus()
++            }
++          }
+
+           ListView {
+             id: resultList
+             anchors.fill: parent
++            anchors.leftMargin: root.bottomMenu ? sidebar.width + 12 : 0
++            anchors.topMargin: root.bottomMenu ? menuTitle.height : 0
+             model: displayModel
+             clip: true
+@@ -1520,6 +1715,6 @@
+                 color: row.hasCursor ? root.selectedText : root.foreground
+                 font.family: row.iconFont.length > 0 ? row.iconFont : root.fontFamily
+-                font.pixelSize: Style.font.iconLarge
+-                width: Style.space(36)
++                  font.pixelSize: root.bottomMenu ? Style.font.body : Style.font.iconLarge
++                  width: root.bottomMenu ? 22 : Style.space(36)
+                 horizontalAlignment: Text.AlignHCenter
+                 verticalAlignment: Text.AlignVCenter
+@@ -1561,7 +1756,7 @@
+                   text: row.label
+                   color: row.hasCursor ? root.selectedText : root.foreground
+-                  font.family: root.fontFamily
+-                  font.pixelSize: Style.font.heading
+-                  font.weight: Font.Medium
++                  font.family: root.bottomMenu ? "sans-serif" : root.fontFamily
++                  font.pixelSize: root.bottomMenu ? Style.font.body : Style.font.heading
++                  font.weight: root.bottomMenu ? Font.Normal : Font.Medium
+                   elide: Text.ElideRight
+                 }
+@@ -1641,7 +1836,7 @@
+           // last row back to the first — lands with the fade already applied.
+           Rectangle {
+-            anchors.left: parent.left
+-            anchors.right: parent.right
+-            anchors.top: parent.top
++            anchors.left: resultList.left
++            anchors.right: resultList.right
++            anchors.top: resultList.top
+             height: Math.min(Style.space(28), parent.height / 2)
+             visible: opacity > 0
+@@ -1656,7 +1851,7 @@
+
+           Rectangle {
+-            anchors.left: parent.left
+-            anchors.right: parent.right
+-            anchors.bottom: parent.bottom
++            anchors.left: resultList.left
++            anchors.right: resultList.right
++            anchors.bottom: resultList.bottom
+             height: Math.min(Style.space(28), parent.height / 2)
+             visible: opacity > 0
+@@ -1671,5 +1866,5 @@
+
+           Column {
+-            anchors.centerIn: parent
++            anchors.centerIn: resultList
+             spacing: Style.space(8)
+             visible: displayModel.count === 0 && root.mode !== "input"

@@ -1,6 +1,6 @@
 # Linear Carbon
 
-An Omarchy theme with charcoal surfaces, a silver accent, and muted syntax
+An Omarchy theme with charcoal surfaces, a blue accent, and muted syntax
 colors. It includes a matching wallpaper. Omarchy uses `colors.toml` to generate
 colors for supported apps, including terminals, Neovim, VS Code, and btop.
 The notch reads that same palette.

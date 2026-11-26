@@ -18,6 +18,7 @@ PanelWindow {
     required property ShellScreen targetScreen
     required property int bezel
     required property int curveRadius
+    required property real frameCornerRadius
     required property date today
     property bool calendarOpen: false
     readonly property int overlayBottomInset: Math.max(0,
@@ -641,32 +642,28 @@ PanelWindow {
         }
     }
 
-    Canvas {
-        anchors.fill: parent
-        readonly property color paintColor: bar.themePalette.frame
-        onPaintColorChanged: requestPaint()
-        onWidthChanged: requestPaint()
-        onHeightChanged: requestPaint()
-        onPaint: {
-            const ctx = getContext("2d");
-            const edge = bar.bezel;
-            const curve = Math.min(bar.curveRadius, Math.max(0, width / 2 - edge));
-            ctx.reset();
-            ctx.clearRect(0, 0, width, height);
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(edge, 0);
-            ctx.arcTo(edge, curve, edge + curve, curve, curve);
-            ctx.lineTo(width - edge - curve, curve);
-            ctx.arcTo(width - edge, curve, width - edge, 0, curve);
-            ctx.lineTo(width - edge, 0);
-            ctx.lineTo(width, 0);
-            ctx.lineTo(width, height);
-            ctx.lineTo(0, height);
-            ctx.closePath();
-            ctx.fillStyle = paintColor;
-            ctx.fill();
-        }
+    Rectangle {
+        anchors.fill: strip
+        color: bar.themePalette.frame
+    }
+
+    FrameShoulder {
+        x: bar.bezel
+        anchors.bottom: strip.top
+        width: bar.frameCornerRadius
+        visible: width > 0
+        mirrored: true
+        inverted: true
+        paintColor: bar.themePalette.frame
+    }
+
+    FrameShoulder {
+        x: parent.width - bar.bezel - width
+        anchors.bottom: strip.top
+        width: bar.frameCornerRadius
+        visible: width > 0
+        inverted: true
+        paintColor: bar.themePalette.frame
     }
 
     Item {
@@ -707,9 +704,25 @@ PanelWindow {
                 anchors.left: parent.left
                 anchors.leftMargin: 6
                 anchors.verticalCenter: parent.verticalCenter
-                width: 53
-                text: "Apps"
+                width: bar.slotSize
                 Accessible.name: "Open application launcher"
+                contentItem: Item {
+                    Grid {
+                        anchors.centerIn: parent
+                        columns: 2
+                        spacing: 1
+
+                        Repeater {
+                            model: 4
+                            Rectangle {
+                                width: 5
+                                height: 5
+                                radius: 1
+                                color: bar.themePalette.ink
+                            }
+                        }
+                    }
+                }
                 onClicked: Quickshell.execDetached(["omarchy-shell", "omarchy.dock", "apps"])
             }
 

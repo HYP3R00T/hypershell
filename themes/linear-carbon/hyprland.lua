@@ -33,6 +33,20 @@ hl.config({
   },
 })
 
+-- Omarchy loads its no-gaps flag after the theme. Keep the bezel clear
+-- when the flag removes all window gaps. The panels reserve top and bottom.
+hl.on("config.reloaded", function()
+  local no_gaps = io.open(os.getenv("HOME") .. "/.local/state/omarchy/toggles/hypr/window-no-gaps.lua", "r")
+  if not no_gaps then return end
+  no_gaps:close()
+
+  hl.config({
+    general = {
+      gaps_out = { top = 0, right = 5, bottom = 0, left = 5 },
+    },
+  })
+end)
+
 -- Remove the backdrop dim only while the Quake console is open.
 local console = "special:qconsole"
 local standard_dim = hl.get_config("decoration.dim_special")

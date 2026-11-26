@@ -13,8 +13,17 @@ ShellRoot {
     readonly property int bezel: 5
     readonly property int frameRadius: 8
     property bool motionEnabled: false
+    property bool gapless: false
+    property bool gapModeReady: false
+    property real bottomFrameRadius: gapless ? 0 : frameRadius
+    readonly property int gapTransitionMs: 340
     property bool themeActive: false
     readonly property ShellScreen targetScreen: Quickshell.screens[0] ?? null
+
+    Behavior on bottomFrameRadius {
+        enabled: shell.motionEnabled && shell.gapModeReady
+        NumberAnimation { duration: shell.gapTransitionMs; easing.type: Easing.InOutSine }
+    }
 
     NotchPalette { id: palette }
 
@@ -40,6 +49,7 @@ ShellRoot {
         themePalette: palette
         bezel: shell.bezel
         curveRadius: shell.frameRadius
+        frameCornerRadius: shell.bottomFrameRadius
         today: clock.date
     }
 
@@ -68,11 +78,23 @@ ShellRoot {
         }
     }
 
+    Process {
+        id: checkGapless
+        command: ["test", "-f", Quickshell.env("HOME") + "/.local/state/omarchy/toggles/hypr/window-no-gaps.lua"]
+        running: true
+        onExited: exitCode => {
+            shell.gapless = exitCode === 0;
+            shell.gapModeReady = true;
+        }
+    }
+
     Connections {
         target: Hyprland
         function onRawEvent(event) {
-            if (event.name === "configreloaded")
+            if (event.name === "configreloaded") {
                 checkMotion.running = true;
+                checkGapless.running = true;
+            }
         }
     }
 
@@ -88,25 +110,56 @@ ShellRoot {
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         mask: Region {}
 
-        Canvas {
-            readonly property color paintColor: shell.frameColor
-            anchors.fill: parent
-            onPaintColorChanged: requestPaint()
-            onWidthChanged: requestPaint()
-            onHeightChanged: requestPaint()
-            onPaint: {
-                const ctx = getContext("2d");
-                const edge = shell.bezel;
-                const innerRadius = shell.frameRadius;
-                ctx.reset();
-                ctx.clearRect(0, 0, width, height);
-                ctx.beginPath();
-                ctx.rect(0, 0, width, height);
-                ctx.roundedRect(edge, edge, width - 2 * edge, height - 2 * edge, innerRadius, innerRadius);
-                ctx.fillRule = Qt.OddEvenFill;
-                ctx.fillStyle = paintColor;
-                ctx.fill();
-            }
+        Rectangle {
+            anchors { top: parent.top; bottom: parent.bottom; left: parent.left }
+            width: shell.bezel
+            color: shell.frameColor
+        }
+
+        Rectangle {
+            anchors { top: parent.top; bottom: parent.bottom; right: parent.right }
+            width: shell.bezel
+            color: shell.frameColor
+        }
+
+        Rectangle {
+            anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+            height: shell.bezel
+            color: shell.frameColor
+        }
+
+        FrameShoulder {
+            x: shell.bezel
+            y: shell.bezel
+            width: shell.frameRadius
+            mirrored: true
+            paintColor: shell.frameColor
+        }
+
+        FrameShoulder {
+            x: parent.width - shell.bezel - width
+            y: shell.bezel
+            width: shell.frameRadius
+            paintColor: shell.frameColor
+        }
+
+        FrameShoulder {
+            x: shell.bezel
+            y: parent.height - shell.bezel - height
+            width: shell.bottomFrameRadius
+            visible: width > 0
+            mirrored: true
+            inverted: true
+            paintColor: shell.frameColor
+        }
+
+        FrameShoulder {
+            x: parent.width - shell.bezel - width
+            y: parent.height - shell.bezel - height
+            width: shell.bottomFrameRadius
+            visible: width > 0
+            inverted: true
+            paintColor: shell.frameColor
         }
     }
 
@@ -118,14 +171,44 @@ ShellRoot {
         color: "transparent"
         anchors { left: true; top: true; right: true }
         implicitHeight: Math.min(450, screen?.height ?? 450)
-        exclusiveZone: shell.bezel + activity.collapsedHeight
+        exclusiveZone: shell.bezel + (shell.gapless ? 0 : activity.collapsedHeight)
         WlrLayershell.namespace: "omarchy-top-preview"
         WlrLayershell.layer: WlrLayer.Top
         WlrLayershell.keyboardFocus: activity.pinned ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         mask: Region {
-            item: activity
+            item: notchViewport.visible ? notchHitArea : null
             bottomLeftRadius: activity.curveRadius
             bottomRightRadius: bottomLeftRadius
+            Region { item: shell.gapless ? revealEdge : null }
+        }
+
+        property bool peek: false
+        readonly property bool notchShown: !shell.gapless || peek || activity.pinned
+        property real notchReveal: notchShown ? 1 : 0
+
+        Behavior on notchReveal {
+            enabled: shell.motionEnabled && shell.gapModeReady
+            NumberAnimation {
+                duration: shell.gapTransitionMs
+                easing.type: Easing.InOutSine
+            }
+        }
+
+        Connections {
+            target: shell
+            function onGaplessChanged() {
+                hideNotch.stop();
+                panel.peek = shell.gapless && (edgeHover.hovered || notchHover.hovered);
+                if (shell.gapless) activity.dismiss();
+            }
+        }
+
+        Timer {
+            id: hideNotch
+            interval: 180
+            onTriggered: {
+                if (!edgeHover.hovered && !notchHover.hovered) panel.peek = false;
+            }
         }
 
         readonly property HyprlandMonitor monitor: screen ? Hyprland.monitorFor(screen) : null
@@ -207,18 +290,61 @@ ShellRoot {
             onCleared: activity.dismiss()
         }
 
-        ActivityIsland {
-            id: activity
+        Item {
+            id: revealEdge
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: activity.width
+            height: shell.bezel
+
+            HoverHandler {
+                id: edgeHover
+                enabled: shell.gapless
+                onHoveredChanged: {
+                    if (hovered) panel.peek = true;
+                    else hideNotch.restart();
+                }
+            }
+        }
+
+        Item {
+            id: notchViewport
+            visible: panel.notchReveal > 0
             anchors.horizontalCenter: parent.horizontalCenter
             y: shell.bezel
-            width: Math.min(implicitWidth, Math.max(0, parent.width - 48))
-            height: implicitHeight
-            themePalette: palette
-            curveRadius: shell.frameRadius
-            motionEnabled: shell.motionEnabled
-            workspaceEntries: panel.workspaceEntries
-            timeLabel: Qt.formatTime(clock.date, "HH:mm")
-            availableHeight: panel.height - shell.bezel
+            width: activity.width + 2 * shell.frameRadius
+            height: activity.height
+            clip: true
+
+            Item {
+                id: notchHitArea
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: activity.width
+                height: activity.height * panel.notchReveal
+
+                HoverHandler {
+                    id: notchHover
+                    enabled: shell.gapless
+                    onHoveredChanged: {
+                        if (hovered) panel.peek = true;
+                        else hideNotch.restart();
+                    }
+                }
+            }
+
+            ActivityIsland {
+                id: activity
+                anchors.horizontalCenter: parent.horizontalCenter
+                y: -height * (1 - panel.notchReveal)
+                opacity: Math.min(1, panel.notchReveal * 1.4)
+                width: Math.min(implicitWidth, Math.max(0, panel.width - 48))
+                height: implicitHeight
+                themePalette: palette
+                curveRadius: shell.frameRadius
+                motionEnabled: shell.motionEnabled
+                workspaceEntries: panel.workspaceEntries
+                timeLabel: Qt.formatTime(clock.date, "HH:mm")
+                availableHeight: panel.height - shell.bezel
+            }
         }
     }
 }

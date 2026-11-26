@@ -1,7 +1,7 @@
 mode = "dark"
 
-# Neutral charcoal surfaces and a silver interaction accent.
-accent = "#d6d6d6"
+# Neutral charcoal surfaces and a blue interaction accent.
+accent = "#98b5d3"
 selection = "#3d3d3d"
 selection_foreground = "#ececec"
 muted = "#969696"

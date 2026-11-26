@@ -32,3 +32,49 @@ hl.config({
     },
   },
 })
+
+-- Remove the backdrop dim only while the Quake console is open.
+local console = "special:qconsole"
+local standard_dim = hl.get_config("decoration.dim_special")
+local console_visible = false
+local styled_agents = {}
+
+local function update_console()
+  local workspace = hl.get_workspace(console)
+  local visible = workspace ~= nil and workspace.visible == true
+  if visible ~= console_visible then
+    hl.config({ decoration = { dim_special = visible and 0 or standard_dim } })
+    console_visible = visible
+  end
+
+  local agents = {}
+  if visible then
+    for _, window in ipairs(hl.get_workspace_windows(console)) do
+      if window.class == "org.omarchy.agent" and window.pid and window.pid > 0 then
+        agents[window.pid] = true
+      end
+    end
+  end
+
+  local command = 'python3 "$HOME/.config/omarchy/themes/linear-carbon/notch/notch-data.py" quake-color'
+  local changed = false
+  for pid in pairs(styled_agents) do
+    if not agents[pid] then
+      command = command .. " " .. pid
+      changed = true
+    end
+  end
+  for pid in pairs(agents) do
+    if not styled_agents[pid] then
+      command = command .. " " .. pid
+      changed = true
+    end
+  end
+  styled_agents = agents
+  if changed then hl.exec_cmd(command) end
+end
+
+hl.on("workspace.special_active", update_console)
+hl.on("window.open", update_console)
+hl.on("window.move_to_workspace", update_console)
+update_console()

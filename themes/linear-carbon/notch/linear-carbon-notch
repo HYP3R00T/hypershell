@@ -43,5 +43,6 @@ if [[ -e "$hidden_by_theme" ]]; then
   rm -f -- "$hidden_by_theme"
 fi
 if [[ "$theme" != linear-carbon && "$instances" == *"Process ID:"* ]]; then
+  python3 "${config%/*}/notch-data.py" quake-color 9>&- || true
   qs kill -p "$config" 9>&-
 fi

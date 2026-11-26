@@ -237,7 +237,7 @@ FocusScope {
                         width: 16
                         height: parent.height
                         color: "transparent"
-                        border.color: island.muted
+                        border.color: island.ink
                         radius: 2
                     }
                     Rectangle {
@@ -246,14 +246,14 @@ FocusScope {
                         width: 12 * island.chargeLevel
                         height: parent.height - 4
                         radius: 1
-                        color: island.muted
+                        color: island.ink
                     }
                     Rectangle {
                         x: 16
                         anchors.verticalCenter: parent.verticalCenter
                         width: 1
                         height: 3
-                        color: island.muted
+                        color: island.ink
                     }
 
                 }
@@ -304,7 +304,7 @@ FocusScope {
                 y: -glyph.viewBox.y
                 ShapePath {
                     strokeWidth: -1
-                    fillColor: island.muted
+                    fillColor: island.ink
                     fillRule: ShapePath.WindingFill
                     PathSvg {
                         path: {

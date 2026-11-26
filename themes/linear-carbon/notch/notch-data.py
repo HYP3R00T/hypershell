@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import subprocess
 import sys
 import tomllib
 import urllib.parse
@@ -84,11 +85,50 @@ def weather():
     )
 
 
+def quake_color(pids):
+    # Runtime events may arrive together. Read the current workspace when
+    # applying the color so a delayed open cannot leave a hidden console dark.
+    def hyprland(command):
+        return json.loads(subprocess.check_output(["hyprctl", "-j", command], timeout=2))
+
+    on_theme = (STATE / "current/theme.name").read_text().strip() == "linear-carbon"
+    visible = on_theme and any(m["specialWorkspace"]["name"] == "special:qconsole"
+                               for m in hyprland("monitors"))
+    agents = {w["pid"]: w for w in hyprland("clients") if w["class"] == "org.omarchy.agent"}
+    pids = map(int, pids) if pids else (
+        pid for pid, agent in agents.items() if agent["workspace"]["name"] == "special:qconsole")
+    for pid in pids:
+        agent = agents.get(pid)
+        try:
+            if not agent or Path(f"/proc/{pid}/comm").read_text().strip() != "ghostty":
+                continue
+            in_console = visible and agent["workspace"]["name"] == "special:qconsole"
+            sequence = b"\x1b]11;#101010\x1b\\" if in_console else b"\x1b]111\x1b\\"
+            children = subprocess.run(["ps", "--ppid", str(pid), "-o", "tty="],
+                                      capture_output=True, text=True, timeout=2)
+            for tty in set(children.stdout.split()):
+                if not re.fullmatch(r"pts/[0-9]+", tty):
+                    continue
+                device = Path("/dev") / tty
+                if not device.is_char_device() or device.stat().st_uid != os.getuid():
+                    continue
+                fd = os.open(device, os.O_WRONLY | os.O_NOCTTY | os.O_NONBLOCK)
+                try:
+                    os.write(fd, sequence)
+                finally:
+                    os.close(fd)
+        except (OSError, subprocess.SubprocessError):
+            continue
+
+
 if __name__ == "__main__":
     readers = {"agents": agents, "weather": weather}
     try:
         mode = sys.argv[1]
+        if mode == "quake-color":
+            quake_color(sys.argv[2:])
+            sys.exit(0)
         result = palette(sys.argv[2]) if mode == "palette" else readers[mode]()
         print(json.dumps(result, ensure_ascii=False))
-    except (OSError, ValueError, IndexError, KeyError, TypeError):
+    except (OSError, ValueError, IndexError, KeyError, TypeError, subprocess.SubprocessError):
         sys.exit(1)

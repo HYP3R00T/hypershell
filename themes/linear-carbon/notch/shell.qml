@@ -176,10 +176,9 @@ ShellRoot {
         WlrLayershell.layer: WlrLayer.Top
         WlrLayershell.keyboardFocus: activity.pinned ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         mask: Region {
-            item: notchViewport.visible ? notchHitArea : null
-            bottomLeftRadius: activity.curveRadius
+            item: notchHitArea
+            bottomLeftRadius: panel.notchReveal > 0 ? activity.curveRadius : 0
             bottomRightRadius: bottomLeftRadius
-            Region { item: shell.gapless ? revealEdge : null }
         }
 
         property bool peek: false
@@ -198,7 +197,7 @@ ShellRoot {
             target: shell
             function onGaplessChanged() {
                 hideNotch.stop();
-                panel.peek = shell.gapless && (edgeHover.hovered || notchHover.hovered);
+                panel.peek = shell.gapless && notchHitArea.containsMouse;
                 if (shell.gapless) activity.dismiss();
             }
         }
@@ -207,7 +206,7 @@ ShellRoot {
             id: hideNotch
             interval: 180
             onTriggered: {
-                if (!edgeHover.hovered && !notchHover.hovered) panel.peek = false;
+                if (!notchHitArea.containsMouse) panel.peek = false;
             }
         }
 
@@ -290,20 +289,24 @@ ShellRoot {
             onCleared: activity.dismiss()
         }
 
-        Item {
-            id: revealEdge
+        // One continuous hover area joins the frame edge and the notch header.
+        MouseArea {
+            id: notchHitArea
             anchors.horizontalCenter: parent.horizontalCenter
+            y: shell.gapless ? 0 : shell.bezel
             width: activity.width
-            height: shell.bezel
+            height: (shell.gapless ? shell.bezel : 0) + Math.max(
+                activity.height * panel.notchReveal,
+                panel.notchShown ? activity.collapsedHeight : 0)
+            z: 1
+            hoverEnabled: shell.gapless && !activity.pinned
+            acceptedButtons: Qt.NoButton
 
-            HoverHandler {
-                id: edgeHover
-                enabled: shell.gapless
-                onHoveredChanged: {
-                    if (hovered) panel.peek = true;
-                    else hideNotch.restart();
-                }
+            onEntered: {
+                hideNotch.stop();
+                panel.peek = true;
             }
+            onExited: hideNotch.restart()
         }
 
         Item {
@@ -314,22 +317,6 @@ ShellRoot {
             width: activity.width + 2 * shell.frameRadius
             height: activity.height
             clip: true
-
-            Item {
-                id: notchHitArea
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: activity.width
-                height: activity.height * panel.notchReveal
-
-                HoverHandler {
-                    id: notchHover
-                    enabled: shell.gapless
-                    onHoveredChanged: {
-                        if (hovered) panel.peek = true;
-                        else hideNotch.restart();
-                    }
-                }
-            }
 
             ActivityIsland {
                 id: activity

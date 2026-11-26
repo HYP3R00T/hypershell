@@ -236,6 +236,7 @@ PanelWindow {
             hoverEnabled: true
             Accessible.name: "Back"
             contentItem: Text {
+                renderType: Text.CurveRendering
                 text: "‹  " + card.backTitle
                 textFormat: Text.PlainText
                 color: popup.themePalette.muted
@@ -291,6 +292,7 @@ PanelWindow {
                     spacing: 6
 
                     Text {
+                        renderType: Text.CurveRendering
                         visible: row.marked
                         width: 13
                         height: parent.height
@@ -314,6 +316,7 @@ PanelWindow {
                     }
 
                     Text {
+                        renderType: Text.CurveRendering
                         readonly property int iconSpace: (row.marked ? 19 : 0) + (!!row.modelData?.icon ? 20 : 0)
                         width: Math.max(0, parent.width - iconSpace - (row.modelData?.hasChildren ? 16 : 0))
                         height: parent.height
@@ -327,6 +330,7 @@ PanelWindow {
                     }
 
                     Text {
+                        renderType: Text.CurveRendering
                         visible: row.modelData?.hasChildren ?? false
                         width: 10
                         height: parent.height

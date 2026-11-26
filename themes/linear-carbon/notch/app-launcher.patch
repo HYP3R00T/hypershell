@@ -294,13 +294,14 @@
              anchors.left: parent.left
              anchors.right: parent.right
              anchors.leftMargin: Style.spacing.controlPaddingX
-@@ -299,11 +375,103 @@
+@@ -299,11 +375,110 @@
              font.pixelSize: Style.font.heading
              elide: Text.ElideRight
            }
 +
 +          Controls.TextField {
 +            id: searchField
++            renderType: TextInput.CurveRendering
 +            visible: root.bottomSearch
 +            width: Math.max(0, parent.width - searchAction.width - 6)
 +            height: parent.height
@@ -314,11 +315,16 @@
 +            color: Commons.Color.menu.text
 +            placeholderTextColor: Util.alpha(color, 0.62)
 +            background: Rectangle { radius: 8; color: Util.alpha(Commons.Color.menu.text, 0.07) }
-+            IconImage {
++            Image {
 +              x: 10
 +              anchors.verticalCenter: parent.verticalCenter
-+              implicitSize: 16
++              width: 16
++              height: width
++              readonly property int decodeSize: Math.ceil(width * Screen.devicePixelRatio * 2)
++              sourceSize: Qt.size(decodeSize, decodeSize)
 +              source: Quickshell.iconPath("edit-find-symbolic", "edit-find")
++              fillMode: Image.PreserveAspectFit
++              mipmap: true
 +            }
 +            onTextEdited: {
 +              root.showAll = false
@@ -371,6 +377,7 @@
 +
 +                Text {
 +                  id: searchActionLabel
++                  renderType: Text.CurveRendering
 +                  text: searchAction.text
 +                  font.pixelSize: root.filterText.trim() ? 18 : Style.font.body
 +                  color: root.showAll ? Commons.Color.menu.background : Commons.Color.menu.text
@@ -400,7 +407,17 @@
 
            GridView {
              id: grid
-@@ -343,25 +511,28 @@
+@@ -333,7 +508,8 @@
+                 y: root.cellPadding
+                 width: root.iconSize
+                 height: root.iconSize
+-                sourceSize: Qt.size(root.iconSize * 2, root.iconSize * 2)
++                readonly property int decodeSize: Math.ceil(root.iconSize * 2 * (root.bottomSearch ? Screen.devicePixelRatio : 1))
++                sourceSize: Qt.size(decodeSize, decodeSize)
+                 source: root.appLibrary ? root.appLibrary.iconSource(cell.modelData.icon) : ""
+                 fillMode: Image.PreserveAspectFit
+                 // Loaded with the cell, from Qt's image cache after the first
+@@ -343,25 +519,29 @@
                  mipmap: true
                }
 
@@ -423,6 +440,7 @@
 
                Text {
                  id: label
++                Binding on renderType { when: root.bottomSearch; value: Text.CurveRendering }
                  anchors.top: icon.bottom
 -                anchors.topMargin: Style.spacing.md
 +                anchors.topMargin: root.labelGap
@@ -437,7 +455,7 @@
                  font.pixelSize: Style.font.body
                  horizontalAlignment: Text.AlignHCenter
                  verticalAlignment: Text.AlignTop
-@@ -377,12 +548,13 @@
+@@ -377,12 +557,13 @@
                  acceptedButtons: Qt.LeftButton | Qt.RightButton
                  // The grid would otherwise take a dragging press for a scroll.
                  preventStealing: true
@@ -452,7 +470,25 @@
                    if (!(pressedButtons & Qt.LeftButton)) return
                    if (!cell.moved && Math.hypot(event.x - cell.pressPoint.x, event.y - cell.pressPoint.y) > Style.space(4)) cell.moved = true
                    if (cell.moved) root.dragTo(cell.modelData, cell.mapToItem(panel.contentItem, event.x, event.y))
-@@ -446,7 +618,7 @@
+@@ -407,6 +588,7 @@
+           Text {
+             anchors.centerIn: parent
+             visible: root.apps.length === 0
++            Binding on renderType { when: root.bottomSearch; value: Text.CurveRendering }
+             textFormat: Text.PlainText
+             text: Commons.I18n.t("dock.noAppsMatch").arg(root.filterText)
+             color: Commons.Color.menu.text
+@@ -424,7 +606,8 @@
+       y: root.dragPoint.y - height / 2
+       width: root.iconSize
+       height: root.iconSize
+-      sourceSize: Qt.size(root.iconSize * 2, root.iconSize * 2)
++      readonly property int decodeSize: Math.ceil(root.iconSize * 2 * (root.bottomSearch ? Screen.devicePixelRatio : 1))
++      sourceSize: Qt.size(decodeSize, decodeSize)
+       source: root.dragEntry && root.appLibrary ? root.appLibrary.iconSource(root.dragEntry.icon) : ""
+       fillMode: Image.PreserveAspectFit
+       smooth: true
+@@ -446,7 +629,7 @@
          ? Math.max(Style.gapsOut, root.menuPoint.x - width)
          : Math.min(root.menuPoint.x, panel.width - width - Style.gapsOut)
        y: Math.min(root.menuPoint.y, panel.height - height - Style.gapsOut)

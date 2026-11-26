@@ -47,6 +47,7 @@ ColumnLayout {
     }
 
     component CalendarText: Text {
+        renderType: Text.CurveRendering
         textFormat: Text.PlainText
         color: calendar.themePalette.ink
         font.pixelSize: 12

@@ -7,7 +7,6 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.SystemTray
 import Quickshell.Wayland
-import Quickshell.Widgets
 import "/usr/share/omarchy/shell/plugins/dock/DockModel.js" as DockModel
 
 PanelWindow {
@@ -28,9 +27,9 @@ PanelWindow {
     readonly property bool underFullscreen: Hyprland.toplevels.values.some(window =>
         window.workspace?.id === workspaceId && ((Number(window.lastIpcObject?.fullscreen) & 2) !== 0
             || window.wayland?.fullscreen === true))
-    readonly property int slotSize: 32
+    readonly property int slotSize: 36
     readonly property int slotGap: 3
-    readonly property int rowHeight: 36
+    readonly property int rowHeight: 42
     readonly property var terminalEntries: DesktopEntries.applications.values.filter(entry =>
         entry.runInTerminal || entry.execString.includes("--app-id="))
     property var pinnedIds: []
@@ -91,6 +90,7 @@ PanelWindow {
             return;
         }
         pinOverlay.draft = pinnedIds.slice();
+        pinOverlay.selectedPin = pinnedIds[0] ?? "";
         search.text = "";
         pinOverlay.mode = "editor";
         search.forceActiveFocus();
@@ -176,6 +176,20 @@ PanelWindow {
         property string mode: ""
         property int clickX: 0
         property var draft: []
+        property string selectedPin: ""
+        readonly property int selectedPinIndex: Math.max(0, draft.indexOf(selectedPin))
+
+        function moveSelectedPin(offset) {
+            const from = selectedPinIndex;
+            const to = from + offset;
+            if (to < 0 || to >= draft.length) return;
+            const reordered = draft.slice();
+            const [id] = reordered.splice(from, 1);
+            reordered.splice(to, 0, id);
+            selectedPin = id;
+            draft = reordered;
+            Qt.callLater(() => pinOrder.positionViewAtIndex(selectedPinIndex, ListView.Contain));
+        }
         readonly property bool editing: mode === "editor"
         readonly property int editorHeight: Math.min(400, Math.max(200, (bar.targetScreen?.height ?? 800) / 2))
         property real editorProgress: 0
@@ -272,6 +286,7 @@ PanelWindow {
                     Layout.fillWidth: true
                     spacing: 6
                     Text {
+                        renderType: Text.CurveRendering
                         Layout.fillWidth: true
                         text: "Pinned apps"
                         textFormat: Text.PlainText
@@ -295,8 +310,70 @@ PanelWindow {
                     }
                 }
 
+                RowLayout {
+                    visible: pinOverlay.draft.length > 0
+                    Layout.fillWidth: true
+                    spacing: 6
+
+                    Text {
+                        renderType: Text.CurveRendering
+                        text: "Pin order"
+                        color: bar.themePalette.muted
+                        font.pixelSize: 12
+                    }
+
+                    ListView {
+                        id: pinOrder
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: bar.slotSize
+                        clip: true
+                        orientation: ListView.Horizontal
+                        spacing: bar.slotGap
+                        boundsBehavior: Flickable.StopAtBounds
+                        keyNavigationEnabled: false
+                        model: pinOverlay.editing ? pinOverlay.draft : []
+
+                        delegate: BarButton {
+                            id: pin
+                            required property string modelData
+                            required property int index
+                            readonly property var entry: DesktopEntries.byId(modelData)
+                            width: bar.slotSize
+                            selected: index === pinOverlay.selectedPinIndex
+                            enabled: !bar.pendingPins
+                            Accessible.name: entry?.name || modelData
+                            Accessible.selected: selected
+                            onClicked: pinOverlay.selectedPin = modelData
+                            contentItem: Item {
+                                AppIcon {
+                                    anchors.centerIn: parent
+                                    width: 19
+                                    height: width
+                                    source: Quickshell.iconPath(pin.entry?.icon || "application-x-executable", "application-x-executable")
+                                }
+                            }
+                        }
+                    }
+
+                    BarButton {
+                        Layout.preferredWidth: bar.slotSize
+                        text: "‹"
+                        Accessible.name: "Move selected pin left"
+                        enabled: !bar.pendingPins && pinOverlay.selectedPinIndex > 0
+                        onClicked: pinOverlay.moveSelectedPin(-1)
+                    }
+                    BarButton {
+                        Layout.preferredWidth: bar.slotSize
+                        text: "›"
+                        Accessible.name: "Move selected pin right"
+                        enabled: !bar.pendingPins && pinOverlay.selectedPinIndex < pinOverlay.draft.length - 1
+                        onClicked: pinOverlay.moveSelectedPin(1)
+                    }
+                }
+
                 Controls.TextField {
                     id: search
+                    renderType: TextInput.CurveRendering
                     Layout.fillWidth: true
                     Layout.preferredHeight: 34
                     padding: 9
@@ -349,15 +426,15 @@ PanelWindow {
                                 : [...pinOverlay.draft, id];
                         }
                         contentItem: Item {
-                            IconImage {
+                            AppIcon {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 y: 8
                                 width: 28
                                 height: width
-                                asynchronous: true
                                 source: Quickshell.iconPath(app.modelData.icon || "application-x-executable", "application-x-executable")
                             }
                             Text {
+                                renderType: Text.CurveRendering
                                 anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                                 anchors.leftMargin: 6
                                 anchors.rightMargin: 6
@@ -374,6 +451,7 @@ PanelWindow {
                                 elide: Text.ElideRight
                             }
                             Text {
+                                renderType: Text.CurveRendering
                                 anchors { top: parent.top; right: parent.right }
                                 anchors.margins: 6
                                 visible: app.selected
@@ -384,6 +462,7 @@ PanelWindow {
                         }
                     }
                     Text {
+                        renderType: Text.CurveRendering
                         anchors.centerIn: parent
                         visible: appGrid.count === 0
                         text: "No matching apps"
@@ -530,6 +609,16 @@ PanelWindow {
         }
     }
 
+    component AppIcon: Image {
+        // Render desktop assets above the display resolution before scaling down.
+        readonly property int decodeSize: Math.max(1, Math.ceil(width * Screen.devicePixelRatio * 2))
+        sourceSize: Qt.size(decodeSize, decodeSize)
+        fillMode: Image.PreserveAspectFit
+        asynchronous: true
+        smooth: true
+        mipmap: true
+    }
+
     component BarButton: Controls.Button {
         id: button
         property bool selected: false
@@ -542,6 +631,7 @@ PanelWindow {
                 : button.hovered || button.visualFocus ? bar.themePalette.hover : "transparent"
         }
         contentItem: Text {
+            renderType: Text.CurveRendering
             text: button.text
             textFormat: Text.PlainText
             color: bar.themePalette.ink
@@ -654,27 +744,30 @@ PanelWindow {
                     id: task
                     required property var modelData
                     readonly property var window: modelData.windows[0]?.wayland
+                    readonly property bool isRunning: modelData.windows.length > 0
+                    readonly property bool isFocused: modelData.windows.some(window => window.activated)
+                    readonly property string appName: modelData.entry?.name || window?.title || window?.appId || "Application"
                     width: bar.slotSize
-                    Accessible.name: modelData.pinned ? modelData.entry.name + ", pinned"
-                        : window?.title || modelData.entry?.name || window?.appId || "Open window"
+                    Accessible.name: appName + (modelData.pinned ? ", pinned" : "")
+                        + (isFocused ? ", focused" : isRunning ? ", running" : "")
                     contentItem: Item {
-                        IconImage {
+                        AppIcon {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            y: 6
-                            width: 18
+                            y: 4
+                            width: 24
                             height: width
-                            opacity: task.window ? 1 : 0.72
+                            opacity: task.isRunning ? 1 : 0.72
                             source: Quickshell.iconPath(task.modelData.entry?.icon || "application-x-executable", "application-x-executable")
                         }
                         Rectangle {
-                            visible: task.modelData.windows.some(window => window.activated)
+                            visible: task.isRunning
                             anchors.horizontalCenter: parent.horizontalCenter
                             anchors.bottom: parent.bottom
-                            anchors.bottomMargin: 3
-                            width: 8
+                            anchors.bottomMargin: 4
+                            width: task.isFocused ? 10 : 4
                             height: 2
                             radius: 1
-                            color: bar.themePalette.accent
+                            color: task.isFocused ? bar.themePalette.accent : bar.themePalette.muted
                         }
                     }
                     onClicked: bar.activateTask(modelData)
@@ -865,6 +958,7 @@ PanelWindow {
 
         BarButton {
             id: dateButton
+            hoverEnabled: false
             anchors.right: parent.right
             anchors.rightMargin: bar.bezel + 3
             anchors.verticalCenter: parent.verticalCenter
@@ -872,7 +966,12 @@ PanelWindow {
             text: Qt.locale().toString(bar.today, "ddd d MMM")
             Accessible.name: (bar.calendarOpen ? "Close calendar, " : "Open calendar, ")
                 + Qt.locale().toString(bar.today, Locale.LongFormat)
-            selected: bar.calendarOpen
+            background: Rectangle {
+                radius: 7
+                color: "transparent"
+                border.width: dateButton.visualFocus ? 1 : 0
+                border.color: bar.themePalette.muted
+            }
             onClicked: {
                 if (!bar.calendarOpen) Hyprland.refreshMonitors();
                 bar.calendarOpen = !bar.calendarOpen;

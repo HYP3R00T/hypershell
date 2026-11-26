@@ -508,22 +508,25 @@ PanelWindow {
         Connections {
             target: bar
             function onCalendarOpenChanged() {
-                calendarGrowth.stop();
-                calendarOverlay.revealProgress = 0;
-                if (!bar.calendarOpen) return;
-                if (bar.motionEnabled) calendarGrowth.start();
-                else calendarOverlay.revealProgress = 1;
-                calendarCard.forceActiveFocus();
+                calendarMotion.stop();
+                const opening = bar.calendarOpen;
+                const target = opening ? 1 : 0;
+                if (bar.motionEnabled && bar.visible) {
+                    calendarMotion.to = target;
+                    calendarMotion.easing.type = opening ? Easing.OutCubic : Easing.InOutSine;
+                    calendarMotion.start();
+                } else {
+                    calendarOverlay.revealProgress = target;
+                }
+                if (opening) calendarCard.forceActiveFocus();
             }
         }
 
         NumberAnimation {
-            id: calendarGrowth
+            id: calendarMotion
             target: calendarOverlay
             property: "revealProgress"
-            to: 1
             duration: 240
-            easing.type: Easing.OutCubic
         }
 
         MouseArea {
@@ -535,7 +538,7 @@ PanelWindow {
         Shape {
             id: calendarShape
             anchors.fill: parent
-            visible: bar.calendarOpen && calendarCard.width > 0 && calendarCard.height > 0
+            visible: calendarCard.width > 0 && calendarCard.height > 0
             preferredRendererType: Shape.CurveRenderer
             readonly property real leftEdge: calendarCard.x
             readonly property real rightEdge: width - bar.bezel
@@ -598,7 +601,7 @@ PanelWindow {
 
             Loader {
                 id: calendarPane
-                active: bar.calendarOpen
+                active: bar.calendarOpen || calendarOverlay.revealProgress > 0
                 anchors { top: parent.top; right: parent.right }
                 anchors.margins: 12
                 width: Math.max(0, calendarOverlay.calendarWidth - 24)

@@ -9,7 +9,6 @@ import Quickshell.Services.UPower
 import Quickshell.Services.Mpris
 import "/usr/share/omarchy/shell/plugins/panels/audio/Model.js" as AudioModel
 import "/usr/share/omarchy/shell/plugins/panels/network/Model.js" as NetModel
-import "/usr/share/omarchy/shell/plugins/panels/clock/Model.js" as ClockModel
 
 Item {
     id: hub
@@ -47,7 +46,6 @@ Item {
     property bool weatherFailed: false
     property double weatherTime: 0
     readonly property string helper: Quickshell.shellDir + "/notch-data.py"
-    property var shellSettings: ({})
     readonly property string configPath: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/omarchy/shell.json"
 
     readonly property var sections: [
@@ -56,8 +54,7 @@ Item {
         { key: "display", label: "Display", icon: "monitor", view: displayPage },
         { key: "power", label: "Power", icon: "battery-medium", view: powerPage },
         { key: "ethernet", label: "Ethernet", icon: "ethernet-port", view: ethernetPage },
-        { key: "weather", label: "Weather", icon: "cloud-sun", view: weatherPage },
-        { key: "calendar", label: "Calendar", icon: "calendar-days", view: calendarPage }
+        { key: "weather", label: "Weather", icon: "cloud-sun", view: weatherPage }
     ]
     readonly property var nodes: active && selected === "audio" ? Pipewire.nodes.values : []
     readonly property var sink: active && selected === "audio" ? Pipewire.defaultAudioSink : null
@@ -78,11 +75,6 @@ Item {
     clip: true
     implicitHeight: Math.min(410, Math.max(sidebar.implicitHeight + 18,
         content.implicitHeight + pageTopInset + pageBottomInset))
-
-    function pluginSettings(id) {
-        return Object.values(shellSettings.bar?.layout ?? {}).flat().find(entry => entry?.id === id)?.settings
-            ?? shellSettings.plugins?.find(entry => entry?.id === id)?.settings ?? {};
-    }
 
     function number(value, decimals = 0) {
         return Number(value).toLocaleString(Qt.locale(), "f", decimals);
@@ -161,13 +153,6 @@ Item {
         if (active && selected === "audio" && untypedInput) inputRead.read();
     }
 
-    FileView {
-        path: hub.configPath
-        watchChanges: true
-        printErrors: false
-        onFileChanged: reload()
-        onLoaded: { try { hub.shellSettings = JSON.parse(text()); } catch (_) {} }
-    }
     FileView {
         path: hub.configPath.replace(/\.json$/, ".toml")
         watchChanges: true
@@ -1089,91 +1074,6 @@ Item {
                 color: hub.muted
                 text: hub.weather.name ? "Could not refresh the forecast" : "Could not load the configured Omarchy location"
                 wrapMode: Text.Wrap
-            }
-        }
-    }
-
-    Component {
-        id: calendarPage
-        Group {
-            id: calendar
-            readonly property date today: new Date()
-            property date month: new Date(today.getFullYear(), today.getMonth(), 1)
-            readonly property int weekStart: ClockModel.normalizedWeekStart(hub.pluginSettings("omarchy.clock").weekStartDay,
-                Qt.locale().firstDayOfWeek)
-            readonly property var headers: ["Wk"].concat(ClockModel.weekdayOrder(weekStart).map(day => Qt.locale().standaloneDayName(day || 7, Locale.ShortFormat)))
-            readonly property var cells: makeCells(month)
-            function move(delta) {
-                month = new Date(month.getFullYear(), month.getMonth() + delta, 1);
-            }
-            function makeCells(first) {
-                const result = [];
-                const year = first.getFullYear();
-                const number = first.getMonth();
-                const todayKey = ClockModel.dateKey(today.getFullYear(), today.getMonth(), today.getDate());
-                for (const row of ClockModel.monthGrid(year, number, weekStart, todayKey)) {
-                    result.push({text: row.week, muted: true});
-                    for (const day of row.days)
-                        result.push({text: day.day, muted: !day.inMonth, today: day.today});
-                }
-                return result;
-            }
-            RowLayout {
-                Layout.fillWidth: true
-                Action { text: "‹"; minimumButtonWidth: 30; Accessible.name: "Previous month"; onClicked: calendar.move(-1) }
-                Copy { Layout.fillWidth: true; text: Qt.formatDate(calendar.month, "MMMM yyyy"); horizontalAlignment: Text.AlignHCenter; font.bold: true }
-                Action { text: "›"; minimumButtonWidth: 30; Accessible.name: "Next month"; onClicked: calendar.move(1) }
-            }
-            GridLayout {
-                Layout.fillWidth: true
-                columns: 8
-                uniformCellWidths: true
-                columnSpacing: 2
-                rowSpacing: 2
-                Repeater {
-                    model: calendar.headers
-                    delegate: Copy {
-                        required property string modelData
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 24
-                        text: modelData
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        color: hub.muted
-                    }
-                }
-                Repeater {
-                    model: calendar.cells
-                    delegate: Rectangle {
-                        required property var modelData
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 25
-                        radius: 5
-                        color: modelData.today ? hub.selection : "transparent"
-                        Copy {
-                            anchors.fill: parent
-                            text: parent.modelData.text
-                            color: parent.modelData.muted ? hub.muted : hub.ink
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-                }
-            }
-            RowLayout {
-                Layout.fillWidth: true
-                Copy {
-                    Layout.fillWidth: true
-                    color: hub.muted
-                    text: {
-                        const year = calendar.today.getFullYear();
-                        return year + " · " + ClockModel.yearProgressPercent(year, calendar.today.getMonth(), calendar.today.getDate()) + "% elapsed";
-                    }
-                }
-                Action {
-                    text: "Today"
-                    onClicked: calendar.month = new Date(calendar.today.getFullYear(), calendar.today.getMonth(), 1)
-                }
             }
         }
     }

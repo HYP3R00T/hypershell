@@ -76,7 +76,7 @@
 +  // Finish the curves at the visible dock edge, then overlap its fill.
 +  readonly property int frameOverlap: 1
 +  readonly property int bottomInset: Math.max(0,
-+    Number(panel.targetMonitor?.lastIpcObject?.reserved?.[3] || 0) - frameRadius - frameOverlap)
++    Number(panel.targetMonitor?.lastIpcObject?.reserved?.[3] || 0) - frameOverlap)
 +  readonly property int iconSize: Math.round((bottomSearch ? 28 : 56) * Style.fontScale)
    readonly property int labelHeight: Math.ceil(labelMetrics.height) * 2
    readonly property int cellGutter: Style.spacing.sm

@@ -1,3 +1,5 @@
+//@ pragma UseQApplication
+
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
@@ -38,6 +40,7 @@ ShellRoot {
         themePalette: palette
         bezel: shell.bezel
         curveRadius: shell.frameRadius
+        today: clock.date
     }
 
     NotificationCorner {
@@ -115,7 +118,7 @@ ShellRoot {
         color: "transparent"
         anchors { left: true; top: true; right: true }
         implicitHeight: Math.min(450, screen?.height ?? 450)
-        exclusiveZone: 38
+        exclusiveZone: shell.bezel + activity.collapsedHeight
         WlrLayershell.namespace: "omarchy-top-preview"
         WlrLayershell.layer: WlrLayer.Top
         WlrLayershell.keyboardFocus: activity.pinned ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
@@ -215,7 +218,6 @@ ShellRoot {
             motionEnabled: shell.motionEnabled
             workspaceEntries: panel.workspaceEntries
             timeLabel: Qt.formatTime(clock.date, "HH:mm")
-            dateLabel: Qt.formatDate(clock.date, "dddd d MMMM")
             availableHeight: panel.height - shell.bezel
         }
     }

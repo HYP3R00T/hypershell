@@ -4,23 +4,44 @@ set -euo pipefail
 # This hook runs on theme changes and after a Wayland desktop starts.
 [[ -n ${WAYLAND_DISPLAY:-} && -n ${XDG_RUNTIME_DIR:-} ]] || exit 0
 
-config="$HOME/.config/omarchy/themes/linear-carbon/notch/shell.qml"
-[[ -f "$config" ]] || exit 0
-config=$(realpath -e -- "$config")
-
 # Theme hooks can overlap. Read the committed theme once this hook has the lock.
 exec 9>"$XDG_RUNTIME_DIR/linear-carbon-notch.lock"
 flock 9
+state="$HOME/.local/state/omarchy"
+stock_hidden="$state/toggles/bar-off"
+hidden_by_theme="$state/linear-carbon-bar-hidden"
 theme=""
-if [[ -r "$HOME/.local/state/omarchy/current/theme.name" ]]; then
-  read -r theme <"$HOME/.local/state/omarchy/current/theme.name" || true
+if [[ -r "$state/current/theme.name" ]]; then
+  read -r theme <"$state/current/theme.name" || true
 fi
 
-instances=$(LC_ALL=C qs list -p "$config" 9>&- 2>/dev/null || true)
-if [[ "$theme" == linear-carbon ]]; then
+config="$HOME/.config/omarchy/themes/linear-carbon/notch/shell.qml"
+instances=""
+if [[ -f "$config" ]]; then
+  config=$(realpath -e -- "$config")
+  instances=$(LC_ALL=C qs list -p "$config" 9>&- 2>/dev/null || true)
+fi
+
+if [[ "$theme" == linear-carbon && -f "$config" ]]; then
   if [[ "$instances" != *"Process ID:"* ]]; then
     qs -n -d -p "$config" 9>&-
+    # Keep the stock bar available if the replacement QML could not load.
+    instances=$(LC_ALL=C qs list -p "$config" 9>&- 2>/dev/null || true)
   fi
-elif [[ "$instances" == *"Process ID:"* ]]; then
+  if [[ "$instances" == *"Process ID:"* ]]; then
+    if [[ ! -e "$stock_hidden" ]]; then
+      # Restore the bar on a theme change only if this hook hid it.
+      touch "$hidden_by_theme"
+      omarchy toggle bar on 9>&-
+    fi
+    exit 0
+  fi
+fi
+
+if [[ -e "$hidden_by_theme" ]]; then
+  omarchy toggle bar off 9>&-
+  rm -f -- "$hidden_by_theme"
+fi
+if [[ "$theme" != linear-carbon && "$instances" == *"Process ID:"* ]]; then
   qs kill -p "$config" 9>&-
 fi

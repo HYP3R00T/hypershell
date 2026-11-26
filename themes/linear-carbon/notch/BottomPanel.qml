@@ -1,9 +1,11 @@
 import QtQuick
 import QtQuick.Controls.Basic as Controls
 import QtQuick.Layouts
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
+import Quickshell.Services.SystemTray
 import Quickshell.Wayland
 import Quickshell.Widgets
 import "/usr/share/omarchy/shell/plugins/dock/DockModel.js" as DockModel
@@ -17,6 +19,10 @@ PanelWindow {
     required property ShellScreen targetScreen
     required property int bezel
     required property int curveRadius
+    required property date today
+    property bool calendarOpen: false
+    readonly property int overlayBottomInset: Math.max(0,
+        Number(monitor?.lastIpcObject?.reserved?.[3] ?? 0) - 1)
     readonly property HyprlandMonitor monitor: targetScreen ? Hyprland.monitorFor(targetScreen) : null
     readonly property int workspaceId: monitor?.activeWorkspace?.id ?? -1
     readonly property bool underFullscreen: Hyprland.toplevels.values.some(window =>
@@ -131,14 +137,19 @@ PanelWindow {
     visible: themeActive && !!targetScreen && !underFullscreen
     anchors { left: true; bottom: true; right: true }
     implicitHeight: rowHeight + curveRadius
-    exclusiveZone: implicitHeight
+    // Only the painted strip reserves space. The bezel curves extend above it.
+    exclusiveZone: rowHeight
     color: "transparent"
-    // Hyprland arranges Overlay after the existing Top-layer bar, so the
-    // compositor stacks this above it using the bar's live reservation.
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "linear-carbon-bottom-panel"
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-    onVisibleChanged: if (!visible) pinOverlay.mode = ""
+    onVisibleChanged: {
+        if (!visible) {
+            pinOverlay.mode = "";
+            calendarOpen = false;
+            trayDrawer.expanded = false;
+        }
+    }
     mask: Region {
         item: strip
     }
@@ -186,7 +197,7 @@ PanelWindow {
         anchors { left: true; right: true; bottom: true }
         // The compositor puts this non-reserving surface above the bar.
         // Leave a small overlap so the separately rendered surfaces meet cleanly.
-        margins.bottom: -bar.curveRadius - 1
+        margins.bottom: -1
         exclusiveZone: 0
         // Paint the reveal inside a stable layer surface. Its bottom edge is
         // fixed to the bar throughout the animation.
@@ -384,6 +395,141 @@ PanelWindow {
         }
     }
 
+    TrayMenu {
+        id: trayPopup
+        panelVisible: bar.visible
+        targetScreen: bar.targetScreen
+        themePalette: bar.themePalette
+        bezel: bar.bezel
+        curveRadius: bar.curveRadius
+        bottomInset: bar.overlayBottomInset
+    }
+
+    PanelWindow {
+        id: calendarOverlay
+        screen: bar.targetScreen
+        visible: bar.visible
+        anchors { left: true; right: true; top: true; bottom: true }
+        exclusionMode: ExclusionMode.Ignore
+        color: "transparent"
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "linear-carbon-calendar"
+        WlrLayershell.keyboardFocus: bar.calendarOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+        mask: Region {
+            width: bar.calendarOpen ? calendarOverlay.width : 0
+            height: bar.calendarOpen ? calendarOverlay.height : 0
+        }
+
+        readonly property int calendarWidth: Math.min(320, Math.max(0,
+            width - 2 * (bar.bezel + bar.curveRadius)))
+        readonly property int calendarHeight: Math.ceil(calendarPane.implicitHeight) + 24
+        property real revealProgress: 0
+
+        Connections {
+            target: bar
+            function onCalendarOpenChanged() {
+                calendarGrowth.stop();
+                calendarOverlay.revealProgress = 0;
+                if (!bar.calendarOpen) return;
+                if (bar.motionEnabled) calendarGrowth.start();
+                else calendarOverlay.revealProgress = 1;
+                calendarCard.forceActiveFocus();
+            }
+        }
+
+        NumberAnimation {
+            id: calendarGrowth
+            target: calendarOverlay
+            property: "revealProgress"
+            to: 1
+            duration: 240
+            easing.type: Easing.OutCubic
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.AllButtons
+            onClicked: bar.calendarOpen = false
+        }
+
+        Shape {
+            id: calendarShape
+            anchors.fill: parent
+            visible: bar.calendarOpen && calendarCard.width > 0 && calendarCard.height > 0
+            preferredRendererType: Shape.CurveRenderer
+            readonly property real leftEdge: calendarCard.x
+            readonly property real rightEdge: width - bar.bezel
+            readonly property real topEdge: calendarCard.y
+            readonly property real bottomEdge: calendarCard.y + calendarCard.height
+            readonly property real dockEdge: bottomEdge - 1
+            readonly property real curve: Math.max(0, Math.min(bar.curveRadius,
+                (rightEdge - leftEdge) / 2, (dockEdge - topEdge) / 2))
+
+            ShapePath {
+                fillColor: bar.themePalette.frame
+                strokeWidth: -1
+                startX: calendarShape.leftEdge - calendarShape.curve
+                startY: calendarShape.dockEdge
+
+                PathArc {
+                    x: calendarShape.leftEdge
+                    y: calendarShape.dockEdge - calendarShape.curve
+                    radiusX: calendarShape.curve
+                    radiusY: calendarShape.curve
+                    direction: PathArc.Counterclockwise
+                }
+                PathLine { x: calendarShape.leftEdge; y: calendarShape.topEdge + calendarShape.curve }
+                PathArc {
+                    x: calendarShape.leftEdge + calendarShape.curve
+                    y: calendarShape.topEdge
+                    radiusX: calendarShape.curve
+                    radiusY: calendarShape.curve
+                }
+                PathLine { x: calendarShape.rightEdge - calendarShape.curve; y: calendarShape.topEdge }
+                PathArc {
+                    x: calendarShape.rightEdge
+                    y: calendarShape.topEdge - calendarShape.curve
+                    radiusX: calendarShape.curve
+                    radiusY: calendarShape.curve
+                    direction: PathArc.Counterclockwise
+                }
+                PathLine { x: calendarShape.rightEdge + 1; y: calendarShape.topEdge - calendarShape.curve }
+                PathLine { x: calendarShape.rightEdge + 1; y: calendarShape.bottomEdge }
+                PathLine { x: calendarShape.leftEdge - calendarShape.curve; y: calendarShape.bottomEdge }
+                PathLine { x: calendarShape.leftEdge - calendarShape.curve; y: calendarShape.dockEdge }
+            }
+        }
+
+        FocusScope {
+            id: calendarCard
+            anchors { right: parent.right; bottom: parent.bottom }
+            anchors.rightMargin: bar.bezel - 1
+            anchors.bottomMargin: bar.overlayBottomInset
+            width: Math.round(calendarOverlay.calendarWidth * calendarOverlay.revealProgress)
+            height: Math.round(calendarOverlay.calendarHeight * calendarOverlay.revealProgress)
+            focus: true
+            clip: true
+            Keys.onEscapePressed: bar.calendarOpen = false
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.AllButtons
+            }
+
+            Loader {
+                id: calendarPane
+                active: bar.calendarOpen
+                anchors { top: parent.top; right: parent.right }
+                anchors.margins: 12
+                width: Math.max(0, calendarOverlay.calendarWidth - 24)
+                sourceComponent: PanelCalendar {
+                    themePalette: bar.themePalette
+                    today: bar.today
+                }
+            }
+        }
+    }
+
     component BarButton: Controls.Button {
         id: button
         property bool selected: false
@@ -441,16 +587,28 @@ PanelWindow {
         TapHandler {
             acceptedButtons: Qt.RightButton
             onTapped: eventPoint => {
+                if (!trayDrawer.containsX(eventPoint.position.x))
+                    trayDrawer.expanded = false;
                 if (bar.pendingPins) return;
+                if (eventPoint.position.x >= trayDrawer.x && eventPoint.position.x < dateButton.x + dateButton.width) return;
                 pinOverlay.clickX = Math.round(strip.x + eventPoint.position.x);
                 pinOverlay.mode = "context";
                 editAction.forceActiveFocus();
             }
         }
 
+        TapHandler {
+            acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+            enabled: trayDrawer.expanded
+            onTapped: eventPoint => {
+                if (!trayDrawer.containsX(eventPoint.position.x))
+                    trayDrawer.expanded = false;
+            }
+        }
+
         Item {
             anchors.centerIn: parent
-            width: Math.min(Math.max(0, parent.width - 2 * bar.bezel),
+            width: Math.min(Math.max(0, 2 * trayDrawer.x - parent.width - 12),
                 appPicker.width + 12 + (running.count ? 8 + running.naturalWidth : 0))
             height: parent.height
 
@@ -521,6 +679,203 @@ PanelWindow {
                     }
                     onClicked: bar.activateTask(modelData)
                 }
+            }
+        }
+
+        Item {
+            id: trayDrawer
+            readonly property string vpnWidget: "io.github.grichard99.omaproton-vpn"
+            property bool expanded: false
+            property string vpnStatus: ""
+            readonly property bool revealed: expanded || trayPopup.opened
+            readonly property int slotCount: tray.count + (vpnStatus ? 1 : 0)
+            anchors.right: dateButton.left
+            anchors.rightMargin: visible ? 6 : 0
+            anchors.verticalCenter: parent.verticalCenter
+            width: visible ? trayArrow.width + tray.width : 0
+            height: bar.slotSize
+            visible: slotCount > 0
+            function containsX(panelX) {
+                return panelX >= x && panelX < x + width;
+            }
+
+            onExpandedChanged: if (expanded) vpnProbe.running = true
+            onVisibleChanged: if (!visible) expanded = false
+
+            HyprlandFocusGrab {
+                active: bar.visible && trayDrawer.expanded && !trayPopup.opened
+                windows: [bar]
+                onCleared: trayDrawer.expanded = false
+            }
+
+            Connections {
+                target: trayPopup
+                function onOpenedChanged() {
+                    if (trayPopup.opened) trayDrawer.expanded = false;
+                }
+            }
+
+            Timer {
+                interval: trayDrawer.expanded ? 4000 : 30000
+                running: bar.visible
+                repeat: true
+                triggeredOnStart: true
+                onTriggered: vpnProbe.running = true
+            }
+
+            Process {
+                id: vpnProbe
+                command: ["omarchy-shell", trayDrawer.vpnWidget, "status"]
+                stdout: StdioCollector { id: vpnOutput }
+                onExited: exitCode => trayDrawer.vpnStatus = exitCode === 0 ? vpnOutput.text.trim() : ""
+            }
+
+            BarButton {
+                id: trayArrow
+                width: 28
+                height: width
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                Accessible.name: trayDrawer.revealed ? "Hide system tray" : "Show system tray"
+                onClicked: trayDrawer.expanded = !trayDrawer.expanded
+                contentItem: Item {
+                    Shape {
+                        anchors.centerIn: parent
+                        width: 10
+                        height: 10
+                        preferredRendererType: Shape.CurveRenderer
+                        ShapePath {
+                            fillColor: "transparent"
+                            strokeColor: trayArrow.hovered ? bar.themePalette.ink : bar.themePalette.muted
+                            strokeWidth: 1.5
+                            capStyle: ShapePath.RoundCap
+                            joinStyle: ShapePath.RoundJoin
+                            startX: 7
+                            startY: 1.5
+                            PathLine { x: 3; y: 5 }
+                            PathLine { x: 7; y: 8.5 }
+                        }
+                    }
+                }
+            }
+
+            ListView {
+                id: tray
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                readonly property int slotExtent: 28
+                width: trayDrawer.revealed ? Math.min(trayDrawer.slotCount * slotExtent, Math.floor(strip.width / 4)) : 0
+                height: slotExtent
+                enabled: trayDrawer.revealed
+                Behavior on width {
+                    enabled: bar.motionEnabled
+                    NumberAnimation { duration: trayDrawer.revealed ? 220 : 165; easing.type: Easing.OutCubic }
+                }
+                orientation: ListView.Horizontal
+                layoutDirection: Qt.RightToLeft
+                boundsBehavior: Flickable.StopAtBounds
+                interactive: contentWidth > width
+                clip: true
+                model: SystemTray.items.values.filter(item => item.status !== Status.Passive)
+
+                header: BarButton {
+                    visible: !!trayDrawer.vpnStatus
+                    width: visible ? tray.slotExtent : 0
+                    height: tray.slotExtent
+                    Accessible.name: "OmaProton VPN, " + trayDrawer.vpnStatus
+                    contentItem: Item {
+                        Item {
+                            anchors.centerIn: parent
+                            width: 16
+                            height: width
+                            Shape {
+                                width: 24
+                                height: width
+                                scale: 16 / 24
+                                anchors.centerIn: parent
+                                preferredRendererType: Shape.CurveRenderer
+                                ShapePath {
+                                    fillColor: bar.themePalette.ink
+                                    strokeWidth: -1
+                                    // Proton VPN mark from Simple Icons (CC0).
+                                    PathSvg { path: "m10.176 20.058.858-1.28 6.513-9.838c.57-.86.026-2.014-1.005-2.131L.378 4.95l8.373 15.055a.84.84 0 0 0 1.424.052h.001zM23.586 7.14l-9.662 14.61c-1.036 1.567-3.38 1.478-4.293-.162l-.093-.168c.3-.01.594-.086.855-.235a1.85 1.85 0 0 0 .612-.57l.86-1.28 6.516-9.844c.46-.694.525-1.56.173-2.314a2.375 2.375 0 0 0-1.899-1.364L.493 3.956l-.476-.054C-.163 2.392 1.101.95 2.784 1.143l18.991 2.16c1.856.21 2.835 2.289 1.812 3.838z" }
+                                }
+                            }
+                        }
+                    }
+                    onClicked: {
+                        trayDrawer.expanded = false;
+                        Qt.callLater(() => Quickshell.execDetached(["omarchy-shell", trayDrawer.vpnWidget, "open"]));
+                    }
+                }
+
+                delegate: BarButton {
+                    id: trayButton
+                    required property var modelData
+                    width: tray.slotExtent
+                    height: width
+                    Accessible.name: modelData.title || modelData.tooltipTitle || modelData.id || "Tray application"
+                    selected: trayPopup.opened && trayPopup.menu === modelData.menu
+
+                    function openMenu() {
+                        if (modelData.menu) {
+                            trayPopup.open(modelData.menu);
+                        } else {
+                            const anchor = bar.contentItem.mapFromItem(trayButton, width / 2, 0);
+                            modelData.display(bar, Math.round(anchor.x), Math.round(anchor.y));
+                        }
+                    }
+
+                    contentItem: Item {
+                        Image {
+                            readonly property int pixelSize: Math.round(width * Screen.devicePixelRatio)
+                            anchors.centerIn: parent
+                            width: 16
+                            height: width
+                            sourceSize: Qt.size(pixelSize, pixelSize)
+                            source: trayButton.modelData.icon
+                            fillMode: Image.PreserveAspectFit
+                        }
+                    }
+
+                    onClicked: {
+                        if (modelData.onlyMenu) openMenu();
+                        else modelData.activate();
+                    }
+
+                    TapHandler {
+                        acceptedButtons: Qt.RightButton | Qt.MiddleButton
+                        onTapped: (eventPoint, button) => {
+                            if (button === Qt.MiddleButton) trayButton.modelData.secondaryActivate();
+                            else trayButton.openMenu();
+                        }
+                    }
+
+                    WheelHandler {
+                        target: null
+                        onWheel: event => {
+                            const horizontal = Math.abs(event.angleDelta.x) > Math.abs(event.angleDelta.y);
+                            const delta = horizontal ? event.angleDelta.x : event.angleDelta.y;
+                            if (delta) trayButton.modelData.scroll(delta, horizontal);
+                        }
+                    }
+                }
+            }
+        }
+
+        BarButton {
+            id: dateButton
+            anchors.right: parent.right
+            anchors.rightMargin: bar.bezel + 3
+            anchors.verticalCenter: parent.verticalCenter
+            width: contentItem.implicitWidth + 20
+            text: Qt.locale().toString(bar.today, "ddd d MMM")
+            Accessible.name: (bar.calendarOpen ? "Close calendar, " : "Open calendar, ")
+                + Qt.locale().toString(bar.today, Locale.LongFormat)
+            selected: bar.calendarOpen
+            onClicked: {
+                if (!bar.calendarOpen) Hyprland.refreshMonitors();
+                bar.calendarOpen = !bar.calendarOpen;
             }
         }
     }

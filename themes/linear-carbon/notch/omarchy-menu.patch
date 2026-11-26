@@ -111,7 +111,7 @@
      property int cardTop: -1
      property int maxRowsHeight: -1
 +    readonly property int bottomInset: Math.max(0,
-+      Number(targetMonitor?.lastIpcObject?.reserved?.[3] || 0) - root.frameRadius - 1)
++      Number(targetMonitor?.lastIpcObject?.reserved?.[3] || 0) - 1)
      readonly property int centeredTop: Math.max(Style.gapsOut, Math.round((height - root.cardHeight) / 2))
 -    readonly property int effectiveCardTop: cardTop >= 0 ? cardTop : centeredTop
 +    readonly property int effectiveCardTop: root.bottomMenu ? height - bottomInset - root.cardHeight

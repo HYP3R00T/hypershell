@@ -159,7 +159,7 @@ PanelWindow {
         interval: 12000
         onTriggered: corner.requestSnapshot()
     }
-    Timer { id: arrivalTimeout; interval: 5000; onTriggered: corner.incomingKey = "" }
+    Timer { id: arrivalTimeout; interval: 1500; onTriggered: corner.incomingKey = "" }
     FileView {
         path: Quickshell.env("XDG_RUNTIME_DIR") + "/linear-carbon-notification-signal"
         preload: true

@@ -36,13 +36,9 @@ FocusScope {
     required property NotchPalette themePalette
     required property var workspaceEntries
     required property string timeLabel
-    required property string dateLabel
     property real availableHeight: 450
 
     property bool pinned: false
-    property bool peek: false
-    property bool waitForExit: false
-    readonly property bool expanded: pinned || peek
     readonly property color frameColor: themePalette.frame
     readonly property color ink: themePalette.ink
     readonly property color muted: themePalette.muted
@@ -52,7 +48,7 @@ FocusScope {
     readonly property UPowerDevice battery: UPower.displayDevice
     readonly property real chargeLevel: Math.max(0, Math.min(1, battery?.percentage ?? 0))
 
-    property real morph: expanded ? 1 : 0
+    property real morph: pinned ? 1 : 0
     readonly property int reservedWorkspaceMarks: 7
     readonly property int workspaceMarkPitch: 7
     readonly property int statusHeight: 10
@@ -64,8 +60,8 @@ FocusScope {
     readonly property int controlsBottomInset: 12
     readonly property real maxControlHeight: Math.max(0, availableHeight - header.height - controlsTopInset - controlsBottomInset)
     implicitWidth: 210 + workspaceExtraWidth + 20 * morph + 246 * controlsProgress
-    implicitHeight: header.height + (1 - controlsProgress) * morph * (date.implicitHeight + 12)
-        + controlsProgress * (Math.min(maxControlHeight, controls.implicitHeight) + controlsTopInset + controlsBottomInset)
+    readonly property int collapsedHeight: header.height
+    implicitHeight: collapsedHeight + controlsProgress * (Math.min(maxControlHeight, controls.implicitHeight) + controlsTopInset + controlsBottomInset)
 
     Behavior on controlsProgress {
         enabled: island.motionEnabled
@@ -74,7 +70,7 @@ FocusScope {
 
     Behavior on morph {
         enabled: island.motionEnabled
-        NumberAnimation { duration: island.expanded ? 265 : 175; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: island.pinned ? 265 : 175; easing.type: Easing.OutCubic }
     }
 
     Behavior on workspaceExtraWidth {
@@ -84,32 +80,9 @@ FocusScope {
 
     function dismiss() {
         pinned = false;
-        peek = false;
-        waitForExit = pointer.hovered;
-        enterDelay.stop();
-        leaveDelay.stop();
     }
 
     Keys.onEscapePressed: dismiss()
-
-    HoverHandler {
-        id: pointer
-        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-        onHoveredChanged: {
-            if (hovered) {
-                leaveDelay.stop();
-                if (!island.expanded && !island.waitForExit)
-                    enterDelay.restart();
-            } else {
-                island.waitForExit = false;
-                enterDelay.stop();
-                if (!island.pinned)
-                    leaveDelay.restart();
-            }
-        }
-    }
-    Timer { id: enterDelay; interval: 145; onTriggered: island.peek = pointer.hovered }
-    Timer { id: leaveDelay; interval: 180; onTriggered: island.peek = false }
 
     function refreshLayout() {
         if (activeWorkspaceKey && !layoutQuery.running) {
@@ -296,23 +269,6 @@ FocusScope {
         clip: true
         opacity: Math.max(0, Math.min(1, (island.morph - 0.22) / 0.62))
         visible: opacity > 0
-
-        Label {
-            id: date
-            anchors.top: parent.top
-            anchors.topMargin: 2
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.leftMargin: 15
-            anchors.rightMargin: 15
-            text: island.dateLabel
-            visible: !island.pinned && island.controlsProgress < 0.1
-            textFormat: Text.PlainText
-            elide: Text.ElideRight
-            horizontalAlignment: Text.AlignHCenter
-            color: island.muted
-            font.pixelSize: 11
-        }
 
         NotchControls {
             id: controls

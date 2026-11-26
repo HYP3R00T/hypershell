@@ -16,16 +16,18 @@ with matching names.
 ```sh
 theme_dir="$HOME/.config/omarchy/themes/linear-carbon"
 mkdir -p "$theme_dir"
-cp -R backgrounds notch chromium.theme colors.toml icons.theme shell.toml "$theme_dir/"
+cp -R backgrounds notch chromium.theme colors.toml hyprland.lua icons.theme shell.toml "$theme_dir/"
 omarchy theme set "Linear Carbon"
 ```
 
-## Enable the optional notch
+## Enable the Linear Carbon panels
 
-The notch is a top panel that runs alongside the standard Omarchy bar.
+Linear Carbon replaces the standard Omarchy bar with a top notch and a bottom panel.
 It shows workspaces, the clock, the window layout, and battery level when
-available. Hover over the clock for the date or click the notch to open
-Agents, Audio, Display, Power, Ethernet, Weather, and Calendar.
+available. Click the notch to open Agents, Audio, Display, Power, Ethernet,
+and Weather. The date is on the right of the Linear Carbon bottom panel.
+Click it to open the calendar. Tiled windows have a 5 px gap from the
+frame and panels, with 8 px rounded corners.
 
 With Quickshell and Python 3.11 or newer installed, run these commands once
 from this directory.
@@ -36,8 +38,9 @@ omarchy hook install post-boot notch/linear-carbon-notch
 omarchy theme set "Linear Carbon"
 ```
 
-Switching themes stops the notch. Selecting Linear Carbon again starts it,
-including when logging into an Omarchy session with Linear Carbon active.
+Switching themes stops the Linear Carbon panels and restores the standard bar
+if Linear Carbon hid it. Selecting Linear Carbon starts the panels again.
+The same setup runs at login.
 
 ## Use the bottom-attached app launcher
 

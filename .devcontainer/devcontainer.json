@@ -1,5 +1,5 @@
 {
-	"name": "omarchy-extras",
+	"name": "hypershell",
 	"build": {
 		"context": ".",
 		"dockerfile": "Dockerfile"

@@ -1,8 +1,8 @@
 [project]
-site_name = "Omarchy Extras"
+site_name = "Hyper Shell"
 site_description = "Themes, wallpapers, and shell plugins for Omarchy."
-repo_name = "HYP3R00T/omarchy-extras"
-repo_url = "https://github.com/HYP3R00T/omarchy-extras"
+repo_name = "HYP3R00T/hypershell"
+repo_url = "https://github.com/HYP3R00T/hypershell"
 site_author = "HYP3R00T"
 copyright = "Copyright &copy; 2026 HYP3R00T"
 

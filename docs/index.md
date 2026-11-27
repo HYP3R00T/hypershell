@@ -2,9 +2,9 @@
 icon: lucide/palette
 ---
 
-# Omarchy Extras
+# Hyper Shell
 
-Omarchy Extras is a collection of themes, wallpapers, and shell plugins for Omarchy.
+Hyper Shell is a collection of themes, wallpapers, and shell plugins for Omarchy.
 
 ## Linear Carbon
 
@@ -12,7 +12,7 @@ Linear Carbon draws on Linear's near-black interface and the violet accents of
 Herdr's Carbon Violet theme. It includes a matching wallpaper and colors for
 the shell, window borders, terminals, and Chromium-family browsers.
 
-Visit the [repository README](https://github.com/HYP3R00T/omarchy-extras#install-linear-carbon)
+Visit the [repository README](https://github.com/HYP3R00T/hypershell#install-linear-carbon)
 for installation instructions.
 
 ## Development

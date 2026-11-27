@@ -1,4 +1,4 @@
-# Omarchy Extras
+# Hyper Shell
 
 A collection of themes, wallpapers, and shell plugins for Omarchy.
 

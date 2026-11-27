@@ -2,7 +2,7 @@
 import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
 import "@/styles/global.css";
-import { repository } from "@/data/themes";
+import { repository, sitePath } from "@/data/themes";
 
 interface Props {
   title: string;
@@ -25,9 +25,9 @@ const { title, description, themePage = false } = Astro.props;
     <a class="skip-link" href={themePage ? "#demo" : "#main-content"}>Skip to content</a>
     <header class="site-header">
       <div class="site-width nav">
-        <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span>HyperShell</a>
+        <a class="brand" href={sitePath()}><span class="brand-mark" aria-hidden="true"></span>HyperShell</a>
         <nav aria-label="Main navigation">
-          <a href="/#themes">Themes</a>
+          <a href={sitePath("#themes")}>Themes</a>
           {themePage && <a href="#demo">Desktop</a>}
           {themePage && <a href="#install">Install</a>}
           <a class="repo-link" href={repository}>GitHub</a>
@@ -36,9 +36,9 @@ const { title, description, themePage = false } = Astro.props;
     </header>
     <slot />
     <footer class="site-width site-footer">
-      <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span>HyperShell</a>
+      <a class="brand" href={sitePath()}><span class="brand-mark" aria-hidden="true"></span>HyperShell</a>
       <nav aria-label="Footer navigation">
-        <a href="/#themes">Themes</a>
+        <a href={sitePath("#themes")}>Themes</a>
         <a href={repository}>GitHub</a>
       </nav>
     </footer>

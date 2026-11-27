@@ -18,6 +18,10 @@ mise run site
 Use `pnpm check` to check the Astro and TypeScript sources.
 Use `pnpm build` to produce the static site in `dist/`.
 
+GitHub Actions checks and builds the site on pull requests and deploys
+`website/dist/` to [GitHub Pages](https://hyp3r00t.github.io/hypershell/) after
+a push to `main`.
+
 From the repository root, use `mise run biome` to check and format the
 website's JavaScript and TypeScript. Use `mise run dicon -- 511075/more-grid-small`
 to add an icon from SVGRepo to `src/assets/icons/`.

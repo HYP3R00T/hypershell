@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { themes } from "@/data/themes";
+import { sitePath, themes } from "@/data/themes";
 ---
 <BaseLayout title="HyperShell" description="Browse HyperShell themes for Omarchy and try their desktops in your browser.">
   <main id="main-content" class="site-width">
@@ -17,9 +17,9 @@ import { themes } from "@/data/themes";
       <ul class="theme-list">
         {themes.map(theme => (
           <li>
-            <a class="theme-card" href={`/themes/${theme.slug}/`} aria-labelledby={`${theme.slug}-title`}>
+            <a class="theme-card" href={sitePath(`themes/${theme.slug}/`)} aria-labelledby={`${theme.slug}-title`}>
               <div class="theme-card-preview">
-                <img src={theme.wallpaper} alt="" width="1920" height="960" />
+                <img src={sitePath(theme.wallpaper)} alt="" width="1920" height="960" />
                 <span class="theme-card-notch" aria-hidden="true"></span>
                 <span class="theme-card-dock" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
               </div>

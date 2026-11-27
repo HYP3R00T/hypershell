@@ -7,7 +7,6 @@ Instructions for coding agents working in this repository.
 ```sh
 mise install
 prek run --all-files
-uvx zensical build --clean  # documentation changes
 ```
 
 Run any additional tests or builds documented by the project.

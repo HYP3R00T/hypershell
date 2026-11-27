@@ -62,7 +62,7 @@ or worktree.
 
 These workflows require a trusted checkout, authenticated GitHub CLI access, one unambiguous configured Project,
 and collaborator permission to push. They are not the fork contribution path for external contributors. Read
-[Agent-assisted issue delivery](docs/workflow/agent-delivery.md) for the complete authority boundaries and hosted
+[the issue delivery standard](.agents/skills/issue-to-pr/references/delivery-standard.md) for the authority boundaries and hosted
 setup requirements.
 
 ## Set up the project

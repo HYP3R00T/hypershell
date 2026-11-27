@@ -7,7 +7,6 @@
 mise.local.toml
 mise.*.local.toml
 
-# Generated documentation and tool caches
+# Tool caches
 .cache/
 .rumdl_cache/
-site/

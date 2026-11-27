@@ -175,7 +175,9 @@ function initDesktop(desktop: HTMLElement, demo: HTMLElement) {
 
   function highlightResult(index: number) {
     selectedResult = Math.max(0, Math.min(visibleApps.length - 1, index));
-    [...results.children].forEach((tile, position) => tile.classList.toggle("is-selected", position === selectedResult));
+    for (const [position, tile] of [...results.children].entries()) {
+      tile.classList.toggle("is-selected", position === selectedResult);
+    }
   }
 
   function openApp(id: string) {

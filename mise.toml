@@ -1,4 +1,7 @@
 [tools]
+biome = "latest"
+node = "lts"
+pnpm = "latest"
 prek = "latest"
 rumdl = "latest"
 shellcheck = { version = "latest", os = ["linux", "macos"] }
@@ -15,10 +18,22 @@ enter = { run = "bash ./scripts/enter_project.sh" }
 
 [env]
 _.file = ".env" # for sensitive data
+_.path = ["{{config_root}}/website/node_modules/.bin"]
 
-[tasks.docs]
-description = "Serve the documentation locally"
-run = "uvx zensical serve"
+[tasks.site]
+description = "Start the local website and open it in your browser"
+dir = "website"
+run = "pnpm dev --open"
+
+[tasks.biome]
+description = "Check and apply Biome fixes to website source"
+dir = "website"
+run = "biome check --write ."
+
+[tasks.dicon]
+description = "Download an SVGRepo icon into the website"
+dir = "website"
+run = "bash ../scripts/download-icon.sh"
 
 [tasks.install-wallpapers]
 description = "Copy all repository wallpapers into the active Omarchy theme"

@@ -1,0 +1,37 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Desktop from "@/components/Desktop.astro";
+
+import { linearCarbon as theme, repository } from "@/data/themes";
+const palette = [
+  ["Carbon", "#090909"], ["Surface", "#191919"], ["Raised", "#262626"],
+  ["Ink", "#ECECEC"], ["Accent", "#98B5D3"],
+];
+---
+<BaseLayout title={`${theme.name} · HyperShell`} description={theme.description} themePage>
+  <main class="site-width">
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow"><span></span> An Omarchy theme</p>
+        <h1 id="page-title">{theme.name}<span>.</span></h1>
+      </div>
+      <p class="intro-copy">A charcoal desktop, framed edge to edge. Try the notch, launcher, and panels directly in the preview.</p>
+    </section>
+
+    <Desktop />
+
+    <section id="install" class="install-section" aria-labelledby="install-title">
+      <div>
+        <p class="eyebrow"><span></span> The theme</p>
+        <h2 id="install-title">On your desktop</h2>
+        <p>Linear Carbon brings the same charcoal surfaces and cool blue accent to the Omarchy shell, Hyprland, and supported apps.</p>
+        <a class="install-link" href={`${repository}/tree/main/themes/${theme.slug}#install`}>Installation guide</a>
+      </div>
+      <dl class="palette" aria-label="Linear Carbon palette">
+        {palette.map(([name, color]) => (
+          <div><span class="swatch" style={`--swatch: ${color}`}></span><dt>{name}</dt><dd>{color}</dd></div>
+        ))}
+      </dl>
+    </section>
+  </main>
+</BaseLayout>

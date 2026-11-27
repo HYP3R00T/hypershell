@@ -14,9 +14,6 @@
 #   # Owners for everything in the repo
 #   * @your-org/team-core
 #
-#   # Owners for docs folder
-#   docs/ @your-org/team-docs
-#
 #   # Owners for Python source files
 #   *.py @your-org/python-devs
 #

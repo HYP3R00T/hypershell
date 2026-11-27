@@ -1,0 +1,170 @@
+---
+import { Icon } from "astro-icon/components";
+
+const sections = [
+  { id: "agents", label: "Agents", icon: "bot" },
+  { id: "audio", label: "Audio", icon: "audio-lines" },
+  { id: "display", label: "Display", icon: "monitor" },
+  { id: "power", label: "Power", icon: "battery-medium" },
+  { id: "ethernet", label: "Ethernet", icon: "ethernet-port" },
+  { id: "weather", label: "Weather", icon: "cloud-sun" },
+];
+
+const apps = [
+  { id: "files", name: "Files", mark: "▰", color: "#8c79cd", pinned: true },
+  { id: "terminal", name: "Terminal", mark: "›_", color: "#71777c", pinned: true },
+  { id: "zed", name: "Zed", mark: "Z", color: "#537eb3", pinned: true },
+  { id: "browser", name: "Browser", mark: "◉", color: "#b35d44", pinned: true },
+  { id: "notes", name: "Notes", mark: "◈", color: "#9168b5", pinned: true },
+  { id: "settings", name: "Settings", mark: "⚙", color: "#707783", pinned: false },
+  { id: "music", name: "Music", mark: "♫", color: "#4d8a72", pinned: false },
+  { id: "photos", name: "Photos", mark: "✿", color: "#bc7552", pinned: false },
+];
+
+const appData = JSON.stringify(apps);
+---
+<section id="demo" class="demo" aria-label="Interactive desktop preview">
+  <div class="demo-toolbar">
+    <span class="demo-title"><span aria-hidden="true"></span> Desktop preview</span>
+    <div class="demo-actions">
+      <button type="button" data-system-menu aria-pressed="false">Omarchy menu</button>
+      <button type="button" data-gapless aria-pressed="false">Gapless</button>
+    </div>
+  </div>
+  <div class="desktop" data-desktop data-apps={appData} tabindex="0" aria-label="Interactive Linear Carbon desktop">
+    <div class="wallpaper" aria-hidden="true"></div>
+    <div class="window-space" data-windows></div>
+
+    <div class="notch-zone" data-notch-zone>
+      <div class="notch">
+        <button class="notch-header" type="button" data-popup="controls" aria-label="Open desktop controls" aria-controls="desktop-controls" aria-expanded="false">
+          <span class="workspace-indicators" aria-hidden="true"><i></i><i></i><i class="current"></i><i></i><i></i></span>
+          <time data-clock>08:30</time>
+          <span class="status-indicators" aria-hidden="true"><span class="grid-icon"></span><span class="battery-gauge"></span></span>
+        </button>
+        <div class="notch-controls popup" id="desktop-controls" data-panel="controls" inert>
+          <div class="control-tabs" role="tablist" aria-label="Desktop controls" aria-orientation="vertical">
+            {sections.map(({ id, label, icon }, index) => (
+              <button type="button" id={`tab-${id}`} role="tab" aria-label={label} aria-controls={`control-${id}`} aria-selected={index === 0 ? "true" : "false"} tabindex={index === 0 ? 0 : -1}><Icon name={icon} /></button>
+            ))}
+          </div>
+          <div class="control-content">
+            {sections.map(({ id, label }, index) => (
+              <section id={`control-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} hidden={index !== 0}>
+                <h2>{label}</h2>
+                {id === "agents" && <div class="demo-agents">
+                  <p class="agent-total"><strong>169.8M</strong> tokens today</p>
+                  <div class="agent-heading"><strong>Antigravity</strong><span>Pro</span></div>
+                  <div class="agent-meter"><span>Session</span><progress max="100" value="44" aria-label="Session usage"></progress><span>2h 24m</span></div>
+                  <div class="agent-meter"><span>Weekly</span><progress max="100" value="24" aria-label="Antigravity weekly usage"></progress><span>6d 21h</span></div>
+                  <div class="agent-heading"><strong>Codex</strong><span>Pro 100</span></div>
+                  <div class="agent-meter"><span>Weekly</span><progress max="100" value="6" aria-label="Codex weekly usage"></progress><span>6d 1h</span></div>
+                  <p class="control-note">3 free resets · Next expires in 5d 8h</p>
+                </div>}
+                {id === "audio" && <>
+                  <label class="range-control"><span>Output volume <output>35%</output></span><input type="range" value="35" /></label>
+                  <label class="range-control"><span>Input gain <output>82%</output></span><input type="range" value="82" /></label>
+                  <button class="control-button" type="button" data-toggle aria-pressed="false">Mute</button>
+                </>}
+                {id === "display" && <>
+                  <label class="range-control"><span>Brightness <output>100%</output></span><input type="range" value="100" data-brightness /></label>
+                  <button class="control-button" type="button" data-toggle aria-pressed="false">Night Light</button>
+                </>}
+                {id === "power" && <>
+                  <p class="control-note">Power profile</p>
+                  <div class="segments" data-segments>
+                    <button type="button" aria-pressed="false">Power saver</button><button type="button" aria-pressed="true">Balanced</button><button type="button" aria-pressed="false">Performance</button>
+                  </div>
+                  <dl class="control-pairs"><div><dt>Battery state</dt><dd>Holding</dd></div><div><dt>Charge limit</dt><dd>75–80%</dd></div></dl>
+                </>}
+                {id === "ethernet" && <>
+                  <dl class="control-pairs"><div><dt>Link speed</dt><dd>100 Mbit/s</dd></div><div><dt>Ping</dt><dd>49 ms</dd></div><div><dt>Packet loss</dt><dd>0%</dd></div></dl>
+                  <p class="control-note">DNS provider</p>
+                  <div class="segments" data-segments><button type="button" aria-pressed="true">DHCP</button><button type="button" aria-pressed="false">Cloudflare</button><button type="button" aria-pressed="false">Google</button></div>
+                </>}
+                {id === "weather" && <div class="weather-reading"><Icon name="cloud-sun"/><div><strong>18°C</strong><p>Kolkata · Partly cloudy</p></div><dl class="control-pairs"><div><dt>Wind</dt><dd>6 km/h</dd></div><div><dt>Humidity</dt><dd>76%</dd></div></dl></div>}
+              </section>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" class="notification-trigger" data-popup="notifications" aria-label="Open notifications" aria-controls="notifications" aria-expanded="false"></button>
+    <section id="notifications" class="notification-panel popup" data-panel="notifications" aria-label="Notifications" inert>
+      <header><h2>Notifications</h2><div>
+        <button type="button" class="icon-button" data-dnd aria-pressed="false" aria-label="Do not disturb" title="Do not disturb">◐</button>
+        <button type="button" class="icon-button" data-clear aria-label="Clear all notifications" title="Clear all"><Icon name="list-x" /></button>
+      </div></header>
+      <div data-notification-list></div>
+    </section>
+
+    <section id="system-menu" class="system-menu popup" data-panel="system-menu" aria-label="Omarchy menu" inert>
+      <h2>Omarchy</h2>
+      <div class="system-commands">
+        <button type="button" data-popup="launcher" aria-controls="launcher" aria-expanded="false"><span class="grid-icon" aria-hidden="true"></span> Applications</button>
+        <button type="button" data-popup="controls" aria-controls="desktop-controls" aria-expanded="false"><Icon name="monitor"/> Desktop controls</button>
+        <button type="button" data-popup="pins" aria-controls="pins" aria-expanded="false"><span aria-hidden="true">◇</span> Edit pinned apps</button>
+        <button type="button" data-popup="console" aria-controls="console" aria-expanded="false"><span aria-hidden="true">›_</span> Quake console</button>
+        <button type="button" data-sample-notification><Icon name="list-x"/> Send sample notification</button>
+      </div>
+    </section>
+
+    <section id="console" class="console popup" data-panel="console" aria-label="Quake console preview" inert>
+      <header><h2>Quake console</h2><button type="button" data-close-panel aria-label="Close console">×</button></header>
+      <p><span aria-hidden="true">❯</span> omarchy theme current</p>
+      <p>Linear Carbon</p>
+      <p><span aria-hidden="true">❯</span> <span class="console-cursor" aria-hidden="true"></span></p>
+    </section>
+
+    <section id="launcher" class="launcher popup" data-panel="launcher" aria-label="App launcher" inert>
+      <div class="app-grid" data-results hidden></div>
+      <div class="launcher-search">
+        <label><span aria-hidden="true">⌕</span><input type="search" placeholder="Search apps…" aria-label="Search apps" /></label>
+        <button type="button" data-all-apps aria-pressed="false"><span class="grid-icon" aria-hidden="true"></span> All apps</button>
+      </div>
+    </section>
+
+    <section id="calendar" class="calendar popup" data-panel="calendar" aria-label="Calendar" inert>
+      <header><button type="button" data-month="-1" aria-label="Previous month">‹</button><h2 data-month-label></h2><button type="button" data-month="1" aria-label="Next month">›</button></header>
+      <div class="calendar-days" data-calendar-grid></div>
+      <footer><span data-year-progress></span><button type="button" data-today>Today</button></footer>
+    </section>
+
+    <div class="tray-menu popup" data-panel="tray-menu" aria-label="System tray menu" inert>
+      <button type="button" data-vpn>Connect VPN</button>
+      <button type="button" data-sample-notification>Send notification</button>
+    </div>
+
+    <div class="panel-menu popup" data-panel="panel-menu" aria-label="Panel menu" inert>
+      <button type="button" data-popup="pins" aria-controls="pins" aria-expanded="false">Edit pinned apps</button>
+    </div>
+    <section id="pins" class="pin-editor popup" data-panel="pins" aria-label="Edit pinned apps" inert>
+      <h2>Pinned apps</h2>
+      <div class="app-grid" data-pin-grid></div>
+    </section>
+
+    <div class="taskbar" aria-label="Bottom panel">
+      <div class="dock">
+        <button type="button" class="dock-button" data-popup="launcher" aria-label="Open app launcher" aria-controls="launcher" aria-expanded="false"><span class="grid-icon" aria-hidden="true"></span></button>
+        <span class="dock-separator" aria-hidden="true"></span>
+        <div class="dock-apps" data-dock></div>
+      </div>
+      <div class="dock-tools">
+        <button type="button" class="dock-button tray-toggle" data-tray-toggle aria-label="Show system tray" aria-expanded="false">‹</button>
+        <div class="tray-items" data-tray inert>
+          <button type="button" class="dock-button" data-popup="tray-menu" aria-label="Open VPN tray menu" title="VPN">◇</button>
+        </div>
+        <button type="button" class="date-button" data-popup="calendar" aria-label="Open calendar" aria-controls="calendar" aria-expanded="false"><time data-date>Thu 26 Nov</time></button>
+      </div>
+    </div>
+  </div>
+  <div class="demo-footer">
+    <p>Click the notch or launcher. Hover at the top right for notifications.</p>
+    <span><kbd>Esc</kbd> closes a panel</span>
+  </div>
+</section>
+
+<script>
+  import "@/scripts/desktop";
+</script>

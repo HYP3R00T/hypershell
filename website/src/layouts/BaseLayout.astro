@@ -1,0 +1,21 @@
+---
+import "@fontsource-variable/inter";
+import "@fontsource-variable/jetbrains-mono";
+import "@/styles/global.css";
+
+const { title, description } = Astro.props as { title: string; description: string };
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#0c0d10" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#demo">Skip to desktop preview</a>
+    <slot />
+  </body>
+</html>

@@ -1,5 +1,6 @@
 ---
 import { Icon } from "astro-icon/components";
+import { linearCarbon, sitePath } from "@/data/themes";
 
 const sections = [
   { id: "agents", label: "Agents", icon: "bot" },
@@ -32,7 +33,7 @@ const appData = JSON.stringify(apps);
     </div>
   </div>
   <div class="desktop" data-desktop data-apps={appData} tabindex="0" aria-label="Interactive Linear Carbon desktop">
-    <div class="wallpaper" aria-hidden="true"></div>
+    <div class="wallpaper" style={{ backgroundImage: `url("${sitePath(linearCarbon.wallpaper)}")` }} aria-hidden="true"></div>
     <div class="window-space" data-windows></div>
 
     <div class="notch-zone" data-notch-zone>

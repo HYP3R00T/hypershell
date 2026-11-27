@@ -81,7 +81,7 @@ p, h1, h2, dl, dd { margin: 0; }
 .wallpaper {
   position: absolute;
   inset: var(--edge) var(--edge) var(--bar-height);
-  background: #28384c url("/salty-suburban.webp") center 60% / cover no-repeat;
+  background: #28384c center 60% / cover no-repeat;
   border-radius: var(--curve);
   filter: brightness(var(--wallpaper-brightness, 1));
   transition: border-radius 280ms ease, filter 200ms ease;

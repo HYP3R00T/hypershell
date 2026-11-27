@@ -1,6 +1,6 @@
 ---
 import { Icon } from "astro-icon/components";
-import { linearCarbon, sitePath } from "@/data/themes";
+import { carbon, sitePath } from "@/data/themes";
 
 const sections = [
   { id: "agents", label: "Agents", icon: "bot" },
@@ -32,8 +32,8 @@ const appData = JSON.stringify(apps);
       <button type="button" data-gapless aria-pressed="false">Gapless</button>
     </div>
   </div>
-  <div class="desktop" data-desktop data-apps={appData} tabindex="0" aria-label="Interactive Linear Carbon desktop">
-    <div class="wallpaper" style={{ backgroundImage: `url("${sitePath(linearCarbon.wallpaper)}")` }} aria-hidden="true"></div>
+  <div class="desktop" data-desktop data-apps={appData} tabindex="0" aria-label="Interactive Carbon desktop">
+    <div class="wallpaper" style={{ backgroundImage: `url("${sitePath(carbon.wallpaper)}")` }} aria-hidden="true"></div>
     <div class="window-space" data-windows></div>
 
     <div class="notch-zone" data-notch-zone>
@@ -114,7 +114,7 @@ const appData = JSON.stringify(apps);
     <section id="console" class="console popup" data-panel="console" aria-label="Quake console preview" inert>
       <header><h2>Quake console</h2><button type="button" data-close-panel aria-label="Close console">×</button></header>
       <p><span aria-hidden="true">❯</span> omarchy theme current</p>
-      <p>Linear Carbon</p>
+      <p>Carbon</p>
       <p><span aria-hidden="true">❯</span> <span class="console-cursor" aria-hidden="true"></span></p>
     </section>
 

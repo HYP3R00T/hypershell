@@ -86,7 +86,7 @@ PanelWindow {
 
     function openPinEditor() {
         if (!pinsReady) {
-            Quickshell.execDetached(["omarchy", "notification", "send", "Could not read Linear Carbon pins"]);
+            Quickshell.execDetached(["omarchy", "notification", "send", "Could not read Carbon pins"]);
             pinOverlay.mode = "";
             return;
         }
@@ -130,7 +130,7 @@ PanelWindow {
         }
         onSaveFailed: {
             bar.pendingPins = null;
-            Quickshell.execDetached(["omarchy", "notification", "send", "Could not save Linear Carbon pins"]);
+            Quickshell.execDetached(["omarchy", "notification", "send", "Could not save Carbon pins"]);
         }
     }
 

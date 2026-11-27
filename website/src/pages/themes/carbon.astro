@@ -2,7 +2,7 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Desktop from "@/components/Desktop.astro";
 
-import { linearCarbon as theme, repository } from "@/data/themes";
+import { carbon as theme, repository } from "@/data/themes";
 const palette = [
   ["Carbon", "#090909"], ["Surface", "#191919"], ["Raised", "#262626"],
   ["Ink", "#ECECEC"], ["Accent", "#98B5D3"],
@@ -24,10 +24,10 @@ const palette = [
       <div>
         <p class="eyebrow"><span></span> The theme</p>
         <h2 id="install-title">On your desktop</h2>
-        <p>Linear Carbon brings the same charcoal surfaces and cool blue accent to the Omarchy shell, Hyprland, and supported apps.</p>
+        <p>Carbon brings the same charcoal surfaces and cool blue accent to the Omarchy shell, Hyprland, and supported apps.</p>
         <a class="install-link" href={`${repository}/tree/main/themes/${theme.slug}#install`}>Installation guide</a>
       </div>
-      <dl class="palette" aria-label="Linear Carbon palette">
+      <dl class="palette" aria-label="Carbon palette">
         {palette.map(([name, color]) => (
           <div><span class="swatch" style={`--swatch: ${color}`}></span><dt>{name}</dt><dd>{color}</dd></div>
         ))}

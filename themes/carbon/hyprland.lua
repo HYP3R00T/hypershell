@@ -1,4 +1,4 @@
--- Match the window corners to the Linear Carbon frame.
+-- Match the window corners to the Carbon frame.
 local active_border = "#666666"
 local inactive_border = "#393939"
 local colors = io.open(os.getenv("HOME") .. "/.local/state/omarchy/current/theme/colors.toml", "r")
@@ -70,7 +70,9 @@ local function update_console()
     end
   end
 
-  local command = 'python3 "$HOME/.config/omarchy/themes/linear-carbon/notch/notch-data.py" quake-color'
+  local command = 'data="$HOME/.config/omarchy/themes/carbon/notch/notch-data.py"; '
+    .. '[ -f "$data" ] || data="$HOME/.config/omarchy/themes/linear-carbon/notch/notch-data.py"; '
+    .. 'python3 "$data" quake-color'
   local changed = false
   for pid in pairs(styled_agents) do
     if not agents[pid] then

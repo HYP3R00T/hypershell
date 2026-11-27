@@ -1,11 +1,11 @@
-"""Add Linear Carbon presentation IPC to an Omarchy notification plugin clone."""
+"""Add Carbon presentation IPC to an Omarchy notification plugin clone."""
 
 import sys
 from pathlib import Path
 
 
 BRIDGE = """
-  // Linear Carbon borrows presentation while the corner renews its lease.
+  // Carbon borrows presentation while the corner renews its lease.
   property bool linearCarbonSelected: false
   property bool cornerBrowsing: false
   property var cornerRemoved: Object.create(null)
@@ -19,7 +19,7 @@ BRIDGE = """
     watchChanges: true
     onFileChanged: reload()
     onLoaded: {
-      service.linearCarbonSelected = text().trim() === "linear-carbon"
+      service.linearCarbonSelected = ["carbon", "linear-carbon"].includes(text().trim())
       if (service.linearCarbonSelected) cornerPulse.restart()
       else cornerLease.stop()
     }

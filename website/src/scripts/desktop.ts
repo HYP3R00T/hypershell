@@ -56,7 +56,7 @@ function initDesktop(desktop: HTMLElement, demo: HTMLElement) {
   let month = new Date();
   const opened = new Map<string, HTMLElement>();
   let notices: Notice[] = [
-    { id: 1, app: "Linear Carbon", title: "Desktop preview ready", message: "Open the notch for controls, or use the launcher to explore apps.", date: new Date() },
+    { id: 1, app: "Carbon", title: "Desktop preview ready", message: "Open the notch for controls, or use the launcher to explore apps.", date: new Date() },
   ];
 
   function setPanel(name: string, trigger: HTMLElement | null = null) {
@@ -213,11 +213,11 @@ function initDesktop(desktop: HTMLElement, demo: HTMLElement) {
       }
     } else {
       const sample: Record<string, string> = {
-        terminal: "❯ omarchy theme current\nLinear Carbon",
-        zed: "/* Linear Carbon */\naccent = #98b5d3",
+        terminal: "❯ omarchy theme current\nCarbon",
+        zed: "/* Carbon */\naccent = #98b5d3",
         browser: "New tab",
         notes: "Desktop notes",
-        settings: "Linear Carbon · Dark appearance",
+        settings: "Carbon · Dark appearance",
         music: "No track playing",
         photos: "No photos in the preview",
       };
@@ -276,7 +276,7 @@ function initDesktop(desktop: HTMLElement, demo: HTMLElement) {
   }
 
   function sendNotice() {
-    notices = [{ id: serial++, app: "Linear Carbon", title: "Sample notification", message: "This is how a notification appears in the corner.", date: new Date() }, ...notices].slice(0, 4);
+    notices = [{ id: serial++, app: "Carbon", title: "Sample notification", message: "This is how a notification appears in the corner.", date: new Date() }, ...notices].slice(0, 4);
     renderNotices();
     if (snoozed || currentPanel && currentPanel !== "notifications") return;
     setPanel("notifications", noticeTrigger);

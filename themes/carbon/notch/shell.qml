@@ -32,7 +32,7 @@ ShellRoot {
         watchChanges: true
         printErrors: false
         onFileChanged: reload()
-        onLoaded: shell.themeActive = text().trim() === "linear-carbon"
+        onLoaded: shell.themeActive = ["carbon", "linear-carbon"].includes(text().trim())
         onLoadFailed: shell.themeActive = false
     }
 

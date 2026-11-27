@@ -15,14 +15,17 @@ if [[ -r "$state/current/theme.name" ]]; then
   read -r theme <"$state/current/theme.name" || true
 fi
 
-config="$HOME/.config/omarchy/themes/linear-carbon/notch/shell.qml"
+config="$HOME/.config/omarchy/themes/carbon/notch/shell.qml"
+if [[ ! -f "$config" ]]; then
+  config="$HOME/.config/omarchy/themes/linear-carbon/notch/shell.qml"
+fi
 instances=""
 if [[ -f "$config" ]]; then
   config=$(realpath -e -- "$config")
   instances=$(LC_ALL=C qs list -p "$config" 9>&- 2>/dev/null || true)
 fi
 
-if [[ "$theme" == linear-carbon && -f "$config" ]]; then
+if [[ ( "$theme" == carbon || "$theme" == linear-carbon ) && -f "$config" ]]; then
   if [[ "$instances" != *"Process ID:"* ]]; then
     qs -n -d -p "$config" 9>&-
     # Keep the stock bar available if the replacement QML could not load.
@@ -42,7 +45,7 @@ if [[ -e "$hidden_by_theme" ]]; then
   omarchy toggle bar off 9>&-
   rm -f -- "$hidden_by_theme"
 fi
-if [[ "$theme" != linear-carbon && "$instances" == *"Process ID:"* ]]; then
+if [[ "$theme" != carbon && "$theme" != linear-carbon && "$instances" == *"Process ID:"* ]]; then
   python3 "${config%/*}/notch-data.py" quake-color 9>&- || true
   qs kill -p "$config" 9>&-
 fi

@@ -2,6 +2,8 @@
 
 A collection of themes, wallpapers, and shell plugins for Omarchy.
 
+Run `mise run site` to open the [interactive website preview](website/).
+
 ## Themes
 
 [**Linear Carbon**](themes/linear-carbon/) pairs charcoal surfaces with a silver accent and

@@ -1,51 +1,37 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import Desktop from "@/components/Desktop.astro";
-
-const repo = "https://github.com/HYP3R00T/hypershell";
-const palette = [
-  ["Carbon", "#090909"], ["Surface", "#191919"], ["Raised", "#262626"],
-  ["Ink", "#ECECEC"], ["Accent", "#98B5D3"],
-];
+import { themes } from "@/data/themes";
 ---
-<BaseLayout title="Linear Carbon — Hyper Shell" description="Explore the Linear Carbon desktop theme for Omarchy in an interactive browser preview.">
-  <header class="site-header">
-    <div class="site-width nav">
-      <a class="brand" href="#" aria-label="Linear Carbon home"><span class="brand-mark" aria-hidden="true"></span>Linear Carbon</a>
-      <nav aria-label="Main navigation">
-        <a href="#demo">Desktop</a>
-        <a href="#install">Install</a>
-        <a class="repo-link" href={repo}>GitHub</a>
-      </nav>
-    </div>
-  </header>
-  <main class="site-width">
+<BaseLayout title="HyperShell" description="Browse HyperShell themes for Omarchy and try their desktops in your browser.">
+  <main id="main-content" class="site-width">
     <section class="intro" aria-labelledby="page-title">
       <div>
-        <p class="eyebrow"><span></span> An Omarchy theme</p>
-        <h1 id="page-title">Linear Carbon<span>.</span></h1>
+        <p class="eyebrow"><span></span> Themes for Omarchy</p>
+        <h1 id="page-title">HyperShell<span>.</span></h1>
       </div>
-      <p class="intro-copy">A charcoal desktop, framed edge to edge. Try the notch, launcher, and panels directly in the preview.</p>
+      <p class="intro-copy">Explore Omarchy themes and try their desktops right in your browser.</p>
     </section>
 
-    <Desktop />
-
-    <section id="install" class="install-section" aria-labelledby="install-title">
-      <div>
-        <p class="eyebrow"><span></span> The theme</p>
-        <h2 id="install-title">On your desktop</h2>
-        <p>Linear Carbon brings the same charcoal surfaces and cool blue accent to the Omarchy shell, Hyprland, and supported apps.</p>
-        <a class="install-link" href={repo + "/tree/main/themes/linear-carbon#install"}>Installation guide</a>
-      </div>
-      <dl class="palette" aria-label="Linear Carbon palette">
-        {palette.map(([name, color]) => (
-          <div><span class="swatch" style={`--swatch: ${color}`}></span><dt>{name}</dt><dd>{color}</dd></div>
+    <section id="themes" class="theme-gallery" aria-labelledby="themes-title">
+      <h2 id="themes-title">Themes</h2>
+      <ul class="theme-list">
+        {themes.map(theme => (
+          <li>
+            <a class="theme-card" href={`/themes/${theme.slug}/`} aria-labelledby={`${theme.slug}-title`}>
+              <div class="theme-card-preview">
+                <img src={theme.wallpaper} alt="" width="1920" height="960" />
+                <span class="theme-card-notch" aria-hidden="true"></span>
+                <span class="theme-card-dock" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+              </div>
+              <div class="theme-card-copy">
+                <h3 id={`${theme.slug}-title`}>{theme.name}</h3>
+                <p>{theme.description}</p>
+                <span class="theme-card-action">Try the theme</span>
+              </div>
+            </a>
+          </li>
         ))}
-      </dl>
+      </ul>
     </section>
   </main>
-  <footer class="site-width site-footer">
-    <span>Linear Carbon · Hyper Shell</span>
-    <span>Wallpaper by Ismail Inceoglu (Seven-teenth)</span>
-  </footer>
 </BaseLayout>

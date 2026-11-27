@@ -2,8 +2,15 @@
 import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
 import "@/styles/global.css";
+import { repository } from "@/data/themes";
 
-const { title, description } = Astro.props as { title: string; description: string };
+interface Props {
+  title: string;
+  description: string;
+  themePage?: boolean;
+}
+
+const { title, description, themePage = false } = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
@@ -15,7 +22,25 @@ const { title, description } = Astro.props as { title: string; description: stri
     <title>{title}</title>
   </head>
   <body>
-    <a class="skip-link" href="#demo">Skip to desktop preview</a>
+    <a class="skip-link" href={themePage ? "#demo" : "#main-content"}>Skip to content</a>
+    <header class="site-header">
+      <div class="site-width nav">
+        <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span>HyperShell</a>
+        <nav aria-label="Main navigation">
+          <a href="/#themes">Themes</a>
+          {themePage && <a href="#demo">Desktop</a>}
+          {themePage && <a href="#install">Install</a>}
+          <a class="repo-link" href={repository}>GitHub</a>
+        </nav>
+      </div>
+    </header>
     <slot />
+    <footer class="site-width site-footer">
+      <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span>HyperShell</a>
+      <nav aria-label="Footer navigation">
+        <a href="/#themes">Themes</a>
+        <a href={repository}>GitHub</a>
+      </nav>
+    </footer>
   </body>
 </html>

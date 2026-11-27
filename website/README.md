@@ -1,9 +1,10 @@
-# Linear Carbon website
+# HyperShell website
 
 The Astro project uses the package setup, strict TypeScript configuration,
 local icon integration, and fonts from
 [HYP3R00T's Astro project template](https://github.com/HYP3R00T/astro-project-template).
-The desktop interactions run in the browser with illustrative data.
+The homepage lists Omarchy themes. Linear Carbon is the first theme and has its
+own interactive preview with illustrative data.
 
 From this directory, run:
 

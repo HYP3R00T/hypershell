@@ -91,7 +91,7 @@ def quake_color(pids):
     def hyprland(command):
         return json.loads(subprocess.check_output(["hyprctl", "-j", command], timeout=2))
 
-    on_theme = (STATE / "current/theme.name").read_text().strip() == "linear-carbon"
+    on_theme = (STATE / "current/theme.name").read_text().strip() in {"carbon", "linear-carbon"}
     visible = on_theme and any(m["specialWorkspace"]["name"] == "special:qconsole"
                                for m in hyprland("monitors"))
     agents = {w["pid"]: w for w in hyprland("clients") if w["class"] == "org.omarchy.agent"}
